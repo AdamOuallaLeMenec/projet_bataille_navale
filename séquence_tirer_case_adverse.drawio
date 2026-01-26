@@ -1,6 +1,6 @@
 <mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36" version="29.3.4">
   <diagram name="Page-1" id="nNBSGoKcipExsgHWtrwu">
-    <mxGraphModel dx="1226" dy="661" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+    <mxGraphModel dx="563" dy="304" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -194,11 +194,11 @@
             <mxPoint x="154.39757375241246" y="849.9512195121952" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="UcPZTGUxYZKpNZoOGV4K-39" parent="UcPZTGUxYZKpNZoOGV4K-43" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="8. fin du tour du joueur&amp;nbsp;" vertex="1">
+        <mxCell id="UcPZTGUxYZKpNZoOGV4K-39" parent="UcPZTGUxYZKpNZoOGV4K-43" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="9. fin du tour du joueur&amp;nbsp;" vertex="1">
           <mxGeometry height="32.19512195121951" width="187.4827681279294" x="134.5464571271023" y="824.1951219512196" as="geometry" />
         </mxCell>
         <mxCell id="UcPZTGUxYZKpNZoOGV4K-40" parent="UcPZTGUxYZKpNZoOGV4K-43" style="shape=umlFrame;whiteSpace=wrap;html=1;pointerEvents=0;fillColor=#d5e8d4;strokeColor=#82b366;" value="loop&amp;nbsp;" vertex="1">
-          <mxGeometry height="735.61" width="680" y="80" as="geometry" />
+          <mxGeometry height="750" width="680" y="80" as="geometry" />
         </mxCell>
         <mxCell id="UcPZTGUxYZKpNZoOGV4K-41" parent="UcPZTGUxYZKpNZoOGV4K-43" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="&lt;font style=&quot;color: rgb(128, 128, 128);&quot;&gt;bateau touché&amp;nbsp;&lt;/font&gt;" vertex="1">
           <mxGeometry height="32.19512195121951" width="66.17038875103391" x="54.039150813344364" y="537.6585365853659" as="geometry" />
@@ -211,6 +211,15 @@
         </mxCell>
         <mxCell id="UcPZTGUxYZKpNZoOGV4K-49" parent="UcPZTGUxYZKpNZoOGV4K-43" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="&lt;font style=&quot;color: rgb(128, 128, 128);&quot;&gt;Tant que le tour du joueur n&#39;est pas fini&amp;nbsp;&lt;/font&gt;" vertex="1">
           <mxGeometry height="32.19512195121951" width="345.18886131789355" x="1.1154618141714536" y="76.0009756097561" as="geometry" />
+        </mxCell>
+        <mxCell id="6KHoqacXv0beOBcmo5J1-2" edge="1" parent="UcPZTGUxYZKpNZoOGV4K-43" style="endArrow=classic;html=1;rounded=0;exitX=0.977;exitY=1.002;exitDx=0;exitDy=0;exitPerimeter=0;" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="481" y="817" as="sourcePoint" />
+            <mxPoint x="155.39757375241246" y="815.9512195121952" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="6KHoqacXv0beOBcmo5J1-3" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="8. Vérifie si le joueur possède un porte avion&amp;nbsp;" vertex="1">
+          <mxGeometry height="30" width="260" x="197" y="815" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
