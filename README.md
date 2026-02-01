@@ -19,7 +19,7 @@ Diagrammes de séquence :
 -Tir sur une case adverse
 -Règles de validité du plateau
 -Réception d’un tir
--Déplacement d’un bateau 
+-Parcours d’une IA
 
 Diagramme d’activité : 
 -déroulement d’une partie
