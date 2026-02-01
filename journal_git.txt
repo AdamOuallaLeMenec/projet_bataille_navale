@@ -1,0 +1,260 @@
+commit a38605354ade4e46ff6691250304690877d7c2a1
+Author: chichicha2006 <165154547+chichicha2006@users.noreply.github.com>
+Date:   Sun Feb 1 22:00:29 2026 +0000
+
+    putting diagrammes into a folder
+
+commit 494ad607a9839abf8318341c3a7e124e72053ab7
+Author: AichaTB <165154547+chichicha2006@users.noreply.github.com>
+Date:   Sun Feb 1 22:35:22 2026 +0100
+
+    ajout rapport
+
+commit 30591574c8adaeb3ac3a406d32f7baa1ef678dd2
+Author: AichaTB <165154547+chichicha2006@users.noreply.github.com>
+Date:   Sun Feb 1 21:18:54 2026 +0100
+
+    Replace 'Déplacement d’un bateau' with 'Parcours d’une IA'
+
+commit 7ed6e47ff91f0787ff98fbf5ec172dd677135890
+Author: marwaidrissi <marwaidrissi423@gmail.com>
+Date:   Sun Feb 1 20:38:22 2026 +0100
+
+    diagramme de classe
+
+commit 9e065e8308bcde00c8aa1d7ac881d4fab6db3a01
+Author: marwaidrissi <marwaidrissi423@gmail.com>
+Date:   Sun Feb 1 20:28:00 2026 +0100
+
+    Remove state diagram details from README
+    
+    Removed state diagram section from README.
+
+commit 06fdede22f722ca55b8d10e1f9e006bfbb29dda1
+Author: marwaidrissi <marwaidrissi423@gmail.com>
+Date:   Sun Feb 1 20:21:51 2026 +0100
+
+    Delete diagrammeDeClasse (2).pdf
+
+commit 9892599ffe50ef5ff0bca7eacdc5ce7d143f8b5e
+Merge: cff579b 3919313
+Author: AdamOuallaLeMenec <20230456@etud.univ-evry.fr>
+Date:   Sun Feb 1 18:09:38 2026 +0100
+
+    Merge pull request #4 from AdamOuallaLeMenec/main
+    
+    séquence_IA
+
+commit 3919313d8c893eecd0aa64190148e2f05b1627c9
+Merge: 8238b50 cff579b
+Author: AdamOuallaLeMenec <20230456@etud.univ-evry.fr>
+Date:   Sun Feb 1 18:01:43 2026 +0100
+
+    Merge branch 'chichicha2006:main' into main
+
+commit 8238b509edb612774ade394006a6daea5c6716b0
+Author: AdamOuallaLeMenec <20230456@etud.univ-evry.fr>
+Date:   Sun Feb 1 17:59:28 2026 +0100
+
+    Ajouté(e) séquence_IA.drawio.pdf
+
+commit a33ac8130e4d3227dc0724d70f210b059aa6f020
+Author: AdamOuallaLeMenec <20230456@etud.univ-evry.fr>
+Date:   Sun Feb 1 14:53:05 2026 +0100
+
+    Rename séquence_cas_IA.drawio.pdf to séquence_IA.drawio.pdf
+
+commit 5a0c2d3b06e9ac528823419ba2cbcdd90a582bbd
+Author: AdamOuallaLeMenec <20230456@etud.univ-evry.fr>
+Date:   Sun Feb 1 14:48:20 2026 +0100
+
+    Rename Diagramme sans nom.drawio.pdf to séquence_cas_IA.drawio.pdf
+
+commit e6968752c04f75a4d28a4f0202e96416b539edb3
+Author: AdamOuallaLeMenec <20230456@etud.univ-evry.fr>
+Date:   Sun Feb 1 14:47:12 2026 +0100
+
+    Ajouté(e) Diagramme sans nom.drawio.pdf
+
+commit cff579b5b8e6d1c24e38765d7bcdb6dbfdf5020e
+Merge: 8c17b5b 244f006
+Author: AichaTB <165154547+chichicha2006@users.noreply.github.com>
+Date:   Sun Feb 1 09:14:02 2026 +0100
+
+    Merge pull request #3 from chichicha2006/chichicha2006-activité_configPartie
+    
+    adding diagramme d'activité
+
+commit 244f006c92c28bd4e6180fced9a38690a265de33
+Author: AichaTB <165154547+chichicha2006@users.noreply.github.com>
+Date:   Sun Feb 1 09:13:33 2026 +0100
+
+    adding diagramme d'activité
+
+commit 8c17b5b1a561716c7e6e9ec64926dfb7154255c6
+Merge: 17e2224 377f2b3
+Author: AichaTB <165154547+chichicha2006@users.noreply.github.com>
+Date:   Sun Feb 1 08:25:50 2026 +0100
+
+    Merge pull request #2 from chichicha2006/chichicha2006-readme_modif
+    
+    modification readme
+
+commit 377f2b3f5984ece3545c49ad41acf74a7279403c
+Author: AichaTB <165154547+chichicha2006@users.noreply.github.com>
+Date:   Sun Feb 1 08:25:31 2026 +0100
+
+    modification readme
+    
+    Updated sequence diagrams and activity diagrams sections.
+
+commit 17e22244895684bf0439d9765155acd86e091e7a
+Author: marwaidrissi <marwaidrissi423@gmail.com>
+Date:   Sun Feb 1 00:08:00 2026 +0100
+
+    DiagrammeDeclasse
+
+commit 35fa43264a7bac948150fcebaa4f8aa1a73a40f4
+Author: marwaidrissi <marwaidrissi423@gmail.com>
+Date:   Sun Feb 1 00:07:18 2026 +0100
+
+    Update tools used section in README
+
+commit 416d8d26a5d7207f3cc39714552a8bed7fae47ee
+Merge: 437c7fa 955824d
+Author: AichaTB <165154547+chichicha2006@users.noreply.github.com>
+Date:   Fri Jan 30 22:55:51 2026 +0100
+
+    Merge pull request #1 from chichicha2006/chichicha2006-patch-1
+    
+    Update README with project details and UML diagrams
+
+commit 955824d48e36434ffd14013637870c6f151f2ebd
+Author: AichaTB <165154547+chichicha2006@users.noreply.github.com>
+Date:   Fri Jan 30 22:55:28 2026 +0100
+
+    Update README with project details and UML diagrams
+    
+    Ajout d'une description détaillée du projet, des règles du jeu et des outils utilisés.
+
+commit 437c7fa869aa24e8f155124a2075a7f92d3585f7
+Author: zakou77 <153215156+zakou77@users.noreply.github.com>
+Date:   Mon Jan 26 23:22:21 2026 +0100
+
+    Add files via upload
+    
+    diagramme détaille la méthode interne recevoirTir(x,y) de la classe Navire
+
+commit 7ed264d48d24ed1fb6cd3230a582c787d8c851ee
+Author: chichicha2006 <165154547+chichicha2006@users.noreply.github.com>
+Date:   Mon Jan 26 23:21:57 2026 +0100
+
+    Ajouté(e) activité_déroulementDePartie.drawio.pdf
+
+commit da0ba55f9cb6e07ca98c5c3d5e6ad3ea1fc73e75
+Author: chichicha2006 <165154547+chichicha2006@users.noreply.github.com>
+Date:   Mon Jan 26 14:17:32 2026 +0100
+
+    supprimer diagramme_cas_utilisation.drawio
+
+commit d9da7e23c45a2eef5eff026b8f3d4612fb934456
+Author: chichicha2006 <165154547+chichicha2006@users.noreply.github.com>
+Date:   Mon Jan 26 14:17:12 2026 +0100
+
+    supprimer séquence_tirer_case_adverse.drawio
+
+commit b8ab5bb27814ed2dce00c7a703e26d0f7e9ffad9
+Author: AdamOuallaLeMenec <20230456@etud.univ-evry.fr>
+Date:   Mon Jan 26 14:02:25 2026 +0100
+
+    Ajouté(e) séquence_cas_Plateau_Cas.drawio.pdf
+
+commit ff9a5ae049f4ffb1a187bf11dacda54a885c7085
+Author: AdamOuallaLeMenec <20230456@etud.univ-evry.fr>
+Date:   Mon Jan 26 14:01:29 2026 +0100
+
+    Ajouté(e) séquence_cas_Plateau_Cas.drawio.pdf
+
+commit fb095932bdae09faec38874f42bffc3224eca98e
+Author: AdamOuallaLeMenec <20230456@etud.univ-evry.fr>
+Date:   Mon Jan 26 14:00:12 2026 +0100
+
+    Ajouté(e) séquence_cas_Plateau_Cas.drawio.pdf
+
+commit dc5f7efcae8a2174f160a0505efd22ac321ede9c
+Author: AdamOuallaLeMenec <20230456@etud.univ-evry.fr>
+Date:   Mon Jan 26 13:58:35 2026 +0100
+
+    Ajouté(e) séquence_cas_Plateau_Cas.drawio.pdf
+
+commit a64c2a1b814c0f6dfe324c7b19b948c35147a0a7
+Author: chichicha2006 <165154547+chichicha2006@users.noreply.github.com>
+Date:   Mon Jan 26 13:58:31 2026 +0100
+
+    Ajouté(e) séquence_tirer_case_adverse.drawio.pdf
+
+commit 12c56d3a4ea8d761195686829bb4e1eb84af474b
+Author: chichicha2006 <165154547+chichicha2006@users.noreply.github.com>
+Date:   Mon Jan 26 13:57:49 2026 +0100
+
+    Mettre à jour séquence_tirer_case_adverse.drawio
+
+commit 363f0b0ba99ac4a072b6545324222a47d58c839e
+Author: chichicha2006 <165154547+chichicha2006@users.noreply.github.com>
+Date:   Mon Jan 26 13:57:13 2026 +0100
+
+    Mettre à jour séquence_tirer_case_adverse.drawio
+
+commit cecb699f07270e28fe8f73927f7e01ea76d30304
+Author: chichicha2006 <165154547+chichicha2006@users.noreply.github.com>
+Date:   Thu Jan 22 13:56:43 2026 +0100
+
+    Ajouté(e) séquence_tirer_case_adverse.drawio.pdf
+
+commit d35459c68191a617d57032dc18f7088326791a26
+Author: chichicha2006 <165154547+chichicha2006@users.noreply.github.com>
+Date:   Thu Jan 22 13:55:41 2026 +0100
+
+    Mettre à jour séquence_tirer_case_adverse.drawio
+
+commit fef6a0413cc2bc690ca0f2d9a38cc994193e79aa
+Author: chichicha2006 <165154547+chichicha2006@users.noreply.github.com>
+Date:   Thu Jan 22 13:19:49 2026 +0100
+
+    Ajouté(e) séquence_tirer_case_adverse.drawio
+
+commit aeb754df0622b75682178ecac0f6e5c1b46694e1
+Author: chichicha2006 <165154547+chichicha2006@users.noreply.github.com>
+Date:   Thu Jan 22 13:18:14 2026 +0100
+
+    Ajouté(e) séquence_tirer_case_adverse.drawio.pdf
+
+commit a2fa306e2a3c91b3e2752c2111e758fb19e35c6c
+Author: chichicha2006 <165154547+chichicha2006@users.noreply.github.com>
+Date:   Thu Jan 22 11:03:28 2026 +0100
+
+    Mettre à jour séquence_tirer_case_adverse.drawio
+
+commit 52594be84c1f8a6fd37357b9e59bfb14d20bc3cf
+Author: chichicha2006 <165154547+chichicha2006@users.noreply.github.com>
+Date:   Thu Jan 22 11:02:13 2026 +0100
+
+    Ajouté(e) séquence_tirer_case_adverse.drawio
+
+commit a7ea4b4b0804d024e244ad10ee24b4444e5d69eb
+Author: chichicha2006 <165154547+chichicha2006@users.noreply.github.com>
+Date:   Mon Jan 19 15:25:12 2026 +0100
+
+    Ajouté(e) diagramme_cas_utilisation.drawio
+
+commit b89eba318f761aab62d9b62a2b3f3ad460754768
+Author: chichicha2006 <165154547+chichicha2006@users.noreply.github.com>
+Date:   Mon Jan 19 15:22:30 2026 +0100
+
+    Ajouté(e) diagramme_cas_utilisation.drawio.pdf
+
+commit f7b53773d227f248ba3a7a5e6917cfe4360396c3
+Author: chichicha2006 <165154547+chichicha2006@users.noreply.github.com>
+Date:   Sun Jan 18 00:38:30 2026 +0100
+
+    Initial commit
