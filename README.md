@@ -17,8 +17,7 @@ Le projet s’appuie sur plusieurs diagrammes UML pour modéliser le système :
 Diagramme de cas d’utilisation 
 
 Diagrammes de séquence :
-
--Tir sur une case adverse
+ -Tir sur une case adverse
 
 -Règles de validité du plateau
 
