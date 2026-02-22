@@ -1,4 +1,8 @@
 # juste pour le test, a supprimer
+import random
+import time
+
+
 class Joueur:
     def __init__(self, nom, est_ia=False):
         self.nom = nom
@@ -15,7 +19,7 @@ class Plateau:
         self.navires_restants = 5 
 
     def tirer(self):
-        résultat = "coulé"  # pour le test, on suppose que chaque tir coule un navire
+        résultat = random.choice(["raté", "touché", "coulé"])
         if résultat == "coulé":
             self.navires_restants -= 1
         return résultat
@@ -44,14 +48,26 @@ class Partie:
         adversaire = self.joueurs[1] if joueur == self.joueurs[0] else self.joueurs[0]
 
         print(f"\nTour de {joueur}")
+        if joueur.est_ia:
+            choix = "1"
+            print("IA choisit de tirer")
+            time.sleep(2) #trop rapide sinon 
+        else:
+            choix = input("Choisir action (1 = Tirer, 2 = Déplacer) : ")
 
-        # choix fictif (tir par défaut)
-        resultat = self.plateaux[adversaire].tirer()
-        print(f"Résultat du tir : {resultat}")
+        if choix == "1":
+            resultat = self.plateaux[adversaire].tirer()
+            print(f"Résultat du tir : {resultat}")
 
-        if resultat == "coulé":
-            print("Navire coulé → tour supplémentaire")
-            joueur.tours_supplementaires += 1
+            if resultat == "coulé":
+                joueur.tours_supplementaires += 1
+                print("Tour supplémentaire gagné !")
+
+        elif choix == "2":
+            print("Déplacement effectué (simulation)")
+        else:
+            print("Choix invalide")
+            return  # on redemande le tour
 
         if joueur.tours_supplementaires > 0:
             joueur.tours_supplementaires -= 1
@@ -66,5 +82,11 @@ class Partie:
             #fin de partie
             for joueur, plateau in self.plateaux.items():
                 if plateau.partie_terminee():
-                    print(f"\n🎉 {self.joueur_courant} a gagné la partie !")
+                    perdant = joueur
+                    gagnant = self.joueurs[1] if joueur == self.joueurs[0] else self.joueurs[0]
+                    print(f"\n🎉 {gagnant} a gagné la partie !")
                     return
+
+
+       
+                
