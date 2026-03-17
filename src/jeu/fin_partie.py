@@ -1,92 +1,44 @@
-# juste pour le test, a supprimer
-import random
-import time
+from joueurs.joueur import Joueur
 
 
-class Joueur:
-    def __init__(self, nom, est_ia=False):
-        self.nom = nom
-        self.est_ia = est_ia
-        self.tours_supplementaires = 0
-        self.a_porte_avions = True
-
-    def __str__(self):
-        return self.nom
-
-# juste pour le teste a supprimer
-class Plateau:
-    def __init__(self):
-        self.navires_restants = 5 
-
-    def tirer(self):
-        résultat = random.choice(["raté", "touché", "coulé"])
-        if résultat == "coulé":
-            self.navires_restants -= 1
-        return résultat
-    def partie_terminee(self): #return true ou false
-        return self.navires_restants <= 0
-
-
-# ########  ########  ########  ########  ########  ########  ########  ########  ########
 class Partie:
-    def __init__(self, joueur1, joueur2): # initialise joueurs et crée plateau pour chacun 
-        self.joueurs = [joueur1, joueur2]
-        self.plateaux = {
-            joueur1: Plateau(),
-            joueur2: Plateau()
-        }
-        self.joueur_courant = joueur1
+    def __init__(self, joueur1: Joueur, joueur2: Joueur):
+        self.joueur1 = joueur1
+        self.joueur2 = joueur2
+        self.joueurCourant = joueur1
+        self.ToursResatants = 0
+        self.Vainqueur = None
 
-    def changer_joueur(self):   # gere les tour, alterne entre joueur 1 et 2
-        self.joueur_courant = (
-            self.joueurs[1] if self.joueur_courant == self.joueurs[0]
-            else self.joueurs[0]
-        )
+    def initialiser(self):
+        self.ToursResatants = self.calculerToursInitials(self.joueur1)
 
-    def jouer_tour(self):
-        joueur = self.joueur_courant
-        adversaire = self.joueurs[1] if joueur == self.joueurs[0] else self.joueurs[0]
+    def demarrer(self):
+        self.initialiser()
 
-        print(f"\nTour de {joueur}")
-        if joueur.est_ia:
-            choix = "1"
-            print("IA choisit de tirer")
-            time.sleep(2) #trop rapide sinon 
-        else:
-            choix = input("Choisir action (1 = Tirer, 2 = Déplacer) : ")
+    def demarrerTour(self):
+        pass
 
-        if choix == "1":
-            resultat = self.plateaux[adversaire].tirer()
-            print(f"Résultat du tir : {resultat}")
+    def jouerTour(self):
+        pass
 
-            if resultat == "coulé":
-                joueur.tours_supplementaires += 1
-                print("Tour supplémentaire gagné !")
+    def calculerToursInitials(self, j: Joueur) -> int:
+        return 1 + self.calculerBonusFlotte(j)
 
-        elif choix == "2":
-            print("Déplacement effectué (simulation)")
-        else:
-            print("Choix invalide")
-            return  # on redemande le tour
+    def calculerBonusFlotte(self, j: Joueur) -> int:
+        return 1 if j.getPlateau().aUnPorteAvionVivant() else 0
 
-        if joueur.tours_supplementaires > 0:
-            joueur.tours_supplementaires -= 1
-            print("Tour supplémentaire utilisé")
-        else:
-            self.changer_joueur()
+    def accorderTourSupplementaire(self) -> None:
+        self.ToursResatants += 1
 
-    def lancer_partie(self):
-        while True:
-            self.jouer_tour()
+    def passerAuJoueurSuivant(self):
+        self.joueurCourant = self.joueur2 if self.joueurCourant == self.joueur1 else self.joueur1
 
-            #fin de partie
-            for joueur, plateau in self.plateaux.items():
-                if plateau.partie_terminee():
-                    perdant = joueur
-                    gagnant = self.joueurs[1] if joueur == self.joueurs[0] else self.joueurs[0]
-                    print(f"\n🎉 {gagnant} a gagné la partie !")
-                    return
+    def estTerminee(self) -> bool:
+        return self.joueur1.getPlateau().tousLesBateauxCoules() or self.joueur2.getPlateau().tousLesBateauxCoules()
 
-
-       
-                
+    def determinerVainqueur(self) -> Joueur | None:
+        if self.joueur1.getPlateau().tousLesBateauxCoules():
+            self.Vainqueur = self.joueur2
+        elif self.joueur2.getPlateau().tousLesBateauxCoules():
+            self.Vainqueur = self.joueur1
+        return self.Vainqueur
