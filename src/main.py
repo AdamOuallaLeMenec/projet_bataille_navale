@@ -27,6 +27,10 @@ YELLOW = (240, 210, 60)
 LIGHT_GREY = (200, 200, 200)
 MENU_BLUE = (80, 110, 190)
 
+SOUND_ENABLED = True
+MUSIC_ENABLED = True
+VOLUME_LEVEL = 0.5
+
 WINDOW_W = 1180
 WINDOW_H = 700
 GRID_Y = 160
@@ -268,7 +272,20 @@ class Plateau:
         if case and not case.estImportante() and case in self.casesImportantes:
             self.casesImportantes.remove(case)
 
-    def calculer_cases_pour_bateau(self, b: Bateau, start_row: int, start_col: int, alignement: Alignement) -> list[Case] | None:
+    def respecte_voisinage(self, cases_proposees: list[Case], bateau_actuel: Bateau) -> bool:
+        """Vérifie qu'aucun autre bateau n'est présent dans les 8 cases autour (diagonales incluses)."""
+        for case in cases_proposees:
+            for dr in range(-1, 2):
+                for dc in range(-1, 2):
+                    r, c = case.ligne + dr, case.colonne + dc
+                    if self.estDansGrille(r, c):
+                        voisine = self.getCase(r, c)
+                        if voisine and voisine.bateau and voisine.bateau != bateau_actuel:
+                            return False
+        return True
+
+    def calculer_cases_pour_bateau(self, b: Bateau, start_row: int, start_col: int, alignement: Alignement) -> list[
+                                                                                                                   Case] | None:
         cases = []
         for i in range(b.taille):
             row = start_row + (0 if alignement == Alignement.Horizontal else i)
@@ -284,7 +301,10 @@ class Plateau:
         return cases
 
     def placementValide(self, b: Bateau, cases: list[Case]) -> bool:
-        return cases is not None and len(cases) == b.taille
+        if cases is None or len(cases) != b.taille:
+            return False
+        # Ajout de la règle de voisinage
+        return self.respecte_voisinage(cases, b)
 
     def placerBateau(self, b: Bateau, cases: list[Case]) -> None:
         if b not in self.bateaux:
@@ -311,7 +331,10 @@ class Plateau:
 
     def deplacementValide(self, b: Bateau, dir: DirectionDeplacement) -> bool:
         nouvelles = b.calculerCasesApresDeplacement(dir, self)
-        return nouvelles is not None
+        # Ajout de la vérification du voisinage pour le déplacement
+        if nouvelles is None or not self.placementValide(b, nouvelles):
+            return False
+        return True
 
     def mettreAJourCasesApresDeplacement(self, anciennes: list[Case], nouvelles: list[Case]) -> None:
         bateau = anciennes[0].bateau if anciennes else None
@@ -326,7 +349,7 @@ class Plateau:
         if any(c.is_clicked for c in b.getCasesOccupees()):
             return ResultatDeplacement.BLOQUE
         nouvelles = b.calculerCasesApresDeplacement(dir, self)
-        if nouvelles is None:
+        if nouvelles is None or not self.placementValide(b, nouvelles):
             return ResultatDeplacement.INVALIDE
         anciennes = list(b.getCasesOccupees())
         self.mettreAJourCasesApresDeplacement(anciennes, nouvelles)
@@ -431,9 +454,10 @@ class JoueurVirtuel(Joueur):
                     coords.append((r, c))
                 if all(coord in available_cells for coord in coords):
                     cases = [self.plateau.getCase(r, c) for r, c in coords]
-                    self.plateau.placerBateau(ship, cases)
-                    available_cells = [cell for cell in available_cells if cell not in coords]
-                    break
+                    if self.plateau.placementValide(ship, cases):
+                        self.plateau.placerBateau(ship, cases)
+                        available_cells = [cell for cell in available_cells if cell not in coords]
+                        break
 
     def reset_hit_logs(self):
         self.derniereCaseTouchee = None
@@ -559,6 +583,26 @@ class TextButton:
         return self.rect.collidepoint(pos)
 
 
+# NOUVELLE CLASSE : Bouton Logo pour le Son
+class AudioToggleButton:
+    def __init__(self, x: int, y: int, size=40):
+        # x et y représentent le coin supérieur droit
+        self.rect = pygame.Rect(x - size, y, size, size)
+
+    def draw(self, surface):
+        global SOUND_ENABLED
+        color = GREEN if SOUND_ENABLED else RED
+        pygame.draw.rect(surface, color, self.rect, border_radius=8)
+        pygame.draw.rect(surface, BLACK, self.rect, 2, border_radius=8)
+
+        texte = "SON" if SOUND_ENABLED else "MUT"
+        label = small_font.render(texte, True, WHITE)
+        surface.blit(label, label.get_rect(center=self.rect.center))
+
+    def clicked(self, pos) -> bool:
+        return self.rect.collidepoint(pos)
+
+
 def draw_centered_text(text, font, y, color=BLACK):
     surface = font.render(text, True, color)
     window_surface.blit(surface, surface.get_rect(center=(WINDOW_W // 2, y)))
@@ -576,7 +620,8 @@ def display_headers(turn_mode: ActionTour, alignement: Alignement):
     draw_centered_text("Bataille Navale", title_font, 42)
     player_text = header_font.render("GRILLE JOUEUR", True, BLACK)
     enemy_text = header_font.render("GRILLE ENNEMIE", True, BLACK)
-    mode_text = body_font.render(f"Mode actuel : {'TIR' if turn_mode == ActionTour.Tirer else 'DEPLACEMENT'}", True, BLACK)
+    mode_text = body_font.render(f"Mode actuel : {'TIR' if turn_mode == ActionTour.Tirer else 'DEPLACEMENT'}", True,
+                                 BLACK)
     axis_text = small_font.render(f"Sens de deplacement : {alignement.value}", True, BLACK)
     window_surface.blit(player_text, player_text.get_rect(center=(255, 132)))
     window_surface.blit(enemy_text, enemy_text.get_rect(center=(925, 132)))
@@ -615,7 +660,8 @@ def get_ship_by_name(ship_group, ship_name: str) -> Bateau | None:
     return None
 
 
-def refresh_screen(player_plateau, enemy_plateau, ship_list, hit_list, buttons, instruction, turn_mode, alignement, selected=None):
+def refresh_screen(player_plateau, enemy_plateau, ship_list, hit_list, buttons, instruction, turn_mode, alignement,
+                   selected=None):
     window_surface.fill(GREY)
     draw_lines()
     player_plateau.draw_grid()
@@ -636,7 +682,8 @@ def refresh_screen(player_plateau, enemy_plateau, ship_list, hit_list, buttons, 
 
     if "menu" in buttons:
         helper = small_font.render("Retour menu", True, BLACK)
-        window_surface.blit(helper, helper.get_rect(center=(buttons["menu"].rect.centerx, buttons["menu"].rect.bottom + 12)))
+        window_surface.blit(helper,
+                            helper.get_rect(center=(buttons["menu"].rect.centerx, buttons["menu"].rect.bottom + 12)))
 
     hit_list.draw(window_surface)
     ship_list.draw(window_surface)
@@ -662,6 +709,9 @@ def pixel_to_direction(ship: Bateau, target: Case) -> DirectionDeplacement | Non
 
 
 def play_sound(effect_type):
+    if not SOUND_ENABLED:
+        return
+
     sound_map = {
         "hit": ["Sounds/boom1.mp3", "Sounds/boom2.mp3", "Sounds/boom3.mp3"],
         "miss": ["Sounds/splash1.mp3", "Sounds/splash2.mp3", "Sounds/splash3.mp3"],
@@ -674,6 +724,8 @@ def play_sound(effect_type):
             sound = pygame.mixer.Sound(asset_path(random.choice(sound_map[effect_type])))
         else:
             sound = pygame.mixer.Sound(asset_path(sound_map[effect_type]))
+
+        sound.set_volume(VOLUME_LEVEL)  # On applique le volume réglé
         sound.play()
     except Exception:
         pass
@@ -706,6 +758,8 @@ def setup_menu_buttons():
 
 def run_main_menu():
     buttons = setup_menu_buttons()
+    audio_logo = AudioToggleButton(WINDOW_W - 20, 20)  # Placement en haut à droite
+
     mode = "ia"
     difficulty = "medium"
     info = "Choisissez un mode et lancez la partie."
@@ -719,17 +773,31 @@ def run_main_menu():
                 sys.exit()
             if event.type == MOUSEBUTTONDOWN:
                 pos = event.pos
-                if buttons["create"].clicked(pos):
+
+                # Gestion du clic sur le logo Audio
+                if audio_logo.clicked(pos):
+                    global SOUND_ENABLED, MUSIC_ENABLED
+                    SOUND_ENABLED = not SOUND_ENABLED
+                    MUSIC_ENABLED = SOUND_ENABLED  # Synchronise musique et bruitages
+                    if MUSIC_ENABLED:
+                        pygame.mixer.music.unpause()
+                    else:
+                        pygame.mixer.music.pause()
+
+                # Autres boutons
+                elif buttons["create"].clicked(pos):
                     mode = "create"
                     info = "Création de partie... Attente d'un joueur."
                     if reseau.connexion is None:
-                        connection_thread = threading.Thread(target=reseau.creer_partie, kwargs={"port": 5000}, daemon=True)
+                        connection_thread = threading.Thread(target=reseau.creer_partie, kwargs={"port": 5000},
+                                                             daemon=True)
                         connection_thread.start()
                 elif buttons["join"].clicked(pos):
                     mode = "join"
                     info = "Rejoindre une partie..."
                     if reseau.connexion is None:
-                        connection_thread = threading.Thread(target=reseau.rejoindre_partie, args=("127.0.0.1", 5000), daemon=True)
+                        connection_thread = threading.Thread(target=reseau.rejoindre_partie, args=("127.0.0.1", 5000),
+                                                             daemon=True)
                         connection_thread.start()
                 elif buttons["ia"].clicked(pos):
                     mode = "ia"
@@ -763,6 +831,9 @@ def run_main_menu():
             if name == "start":
                 active = True
             btn.draw(active)
+
+        # Dessin du logo audio
+        audio_logo.draw(window_surface)
 
         info_panel = pygame.Rect(120, 590, 940, 52)
         pygame.draw.rect(window_surface, DARK_GREY, info_panel, border_radius=8)
@@ -855,7 +926,8 @@ def set_up_player_ships(player: JoueurHumain, enemy: JoueurVirtuel, ship_group, 
         clock.tick(30)
 
 
-def apply_hit_to_enemy(player: JoueurHumain, enemy: JoueurVirtuel, cible: Case, hit_list, ship_group) -> tuple[str, bool, bool]:
+def apply_hit_to_enemy(player: JoueurHumain, enemy: JoueurVirtuel, cible: Case, hit_list, ship_group) -> tuple[
+    str, bool, bool]:
     resultat = player.tirer(enemy, cible)
     center = cible.rect.center
 
@@ -925,7 +997,6 @@ def enemy_take_turn(enemy: JoueurVirtuel, player: JoueurHumain, hit_list) -> tup
     return instruction, False
 
 
-
 def show_game_over(text: str):
     window_surface.fill(GREY)
     draw_lines()
@@ -987,7 +1058,8 @@ def main():
 
         buttons = setup_buttons()
         global current_buttons
-        current_buttons = {k: v for k, v in buttons.items() if k in ["menu", "rotate", "action_tir", "action_move", "axis"]}
+        current_buttons = {k: v for k, v in buttons.items() if
+                           k in ["menu", "rotate", "action_tir", "action_move", "axis"]}
 
         turn_mode = ActionTour.Tirer
         alignement_move = Alignement.Horizontal
@@ -1020,12 +1092,14 @@ def main():
                                 ship.orienter(new_align)
                                 anchor_case = ship.getCasesOccupees()[0] if ship.getCasesOccupees() else None
                                 if anchor_case:
-                                    cases = joueur1.plateau.calculer_cases_pour_bateau(ship, anchor_case.ligne, anchor_case.colonne, new_align)
+                                    cases = joueur1.plateau.calculer_cases_pour_bateau(ship, anchor_case.ligne,
+                                                                                       anchor_case.colonne, new_align)
                                     if cases and joueur1.plateau.placementValide(ship, cases):
                                         joueur1.plateau.placerBateau(ship, cases)
                                         instruction = f"{ship.nom} pivote en {new_align.value}."
                                     else:
-                                        ship.orienter(Alignement.Horizontal if new_align == Alignement.Vertical else Alignement.Vertical)
+                                        ship.orienter(
+                                            Alignement.Horizontal if new_align == Alignement.Vertical else Alignement.Vertical)
                                         instruction = "Rotation impossible ici."
 
                     elif current_buttons["action_tir"].clicked(pos):
@@ -1047,9 +1121,11 @@ def main():
                     elif turn_mode == ActionTour.Tirer and enemy_plateau.rect.collidepoint(pos):
                         cell = enemy_plateau.get_cell_from_pixel(*pos)
                         if cell is not None:
-                            instruction, extra_turn, finished = apply_hit_to_enemy(joueur1, joueur2, cell, hit_list, game_ship_group)
+                            instruction, extra_turn, finished = apply_hit_to_enemy(joueur1, joueur2, cell, hit_list,
+                                                                                   game_ship_group)
                             if finished:
-                                refresh_screen(joueur1.plateau, joueur2.plateau, game_ship_group, hit_list, current_buttons, instruction, turn_mode, alignement_move)
+                                refresh_screen(joueur1.plateau, joueur2.plateau, game_ship_group, hit_list,
+                                               current_buttons, instruction, turn_mode, alignement_move)
                                 pygame.time.wait(1200)
                                 show_game_over("Victoire !")
                                 playing = False
@@ -1058,7 +1134,8 @@ def main():
                             if not extra_turn:
                                 instruction, defeat = enemy_take_turn(joueur2, joueur1, hit_list)
                                 if defeat:
-                                    refresh_screen(joueur1.plateau, joueur2.plateau, game_ship_group, hit_list, current_buttons, instruction, turn_mode, alignement_move)
+                                    refresh_screen(joueur1.plateau, joueur2.plateau, game_ship_group, hit_list,
+                                                   current_buttons, instruction, turn_mode, alignement_move)
                                     pygame.time.wait(1200)
                                     show_game_over("Defaite !")
                                     playing = False
