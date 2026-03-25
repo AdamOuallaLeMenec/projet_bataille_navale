@@ -29,7 +29,7 @@ MENU_BLUE = (80, 110, 190)
 
 SOUND_ENABLED = True
 MUSIC_ENABLED = True
-VOLUME_LEVEL = 0.5
+VOLUME_LEVEL = 0.4
 
 WINDOW_W = 1180
 WINDOW_H = 700
@@ -725,7 +725,7 @@ def play_sound(effect_type):
         else:
             sound = pygame.mixer.Sound(asset_path(sound_map[effect_type]))
 
-        sound.set_volume(VOLUME_LEVEL)  # On applique le volume réglé
+        sound.set_volume(VOLUME_LEVEL)
         sound.play()
     except Exception:
         pass
@@ -758,7 +758,16 @@ def setup_menu_buttons():
 
 def run_main_menu():
     buttons = setup_menu_buttons()
-    audio_logo = AudioToggleButton(WINDOW_W - 20, 20)  # Placement en haut à droite
+    audio_logo = AudioToggleButton(WINDOW_W - 20, 20)
+
+    # REINITIALISATION DU RESEAU EN ARRIVANT SUR LE MENU
+    global reseau
+    if reseau.connexion is not None:
+        try:
+            reseau.connexion.close()
+        except:
+            pass
+        reseau.connexion = None
 
     mode = "ia"
     difficulty = "medium"
@@ -774,52 +783,66 @@ def run_main_menu():
             if event.type == MOUSEBUTTONDOWN:
                 pos = event.pos
 
-                # Gestion du clic sur le logo Audio
+                # Gestion Audio
                 if audio_logo.clicked(pos):
                     global SOUND_ENABLED, MUSIC_ENABLED
                     SOUND_ENABLED = not SOUND_ENABLED
-                    MUSIC_ENABLED = SOUND_ENABLED  # Synchronise musique et bruitages
+                    MUSIC_ENABLED = SOUND_ENABLED
                     if MUSIC_ENABLED:
                         pygame.mixer.music.unpause()
                     else:
                         pygame.mixer.music.pause()
 
-                # Autres boutons
+                # Choix des modes
                 elif buttons["create"].clicked(pos):
                     mode = "create"
-                    info = "Création de partie... Attente d'un joueur."
+                    info = "Création de partie... En attente d'un joueur."
                     if reseau.connexion is None:
                         connection_thread = threading.Thread(target=reseau.creer_partie, kwargs={"port": 5000},
                                                              daemon=True)
                         connection_thread.start()
+
                 elif buttons["join"].clicked(pos):
                     mode = "join"
-                    info = "Rejoindre une partie..."
+                    info = "Recherche de la partie hôte..."
                     if reseau.connexion is None:
                         connection_thread = threading.Thread(target=reseau.rejoindre_partie, args=("127.0.0.1", 5000),
                                                              daemon=True)
                         connection_thread.start()
+
                 elif buttons["ia"].clicked(pos):
                     mode = "ia"
                     info = "Mode contre l'IA sélectionné."
                 elif buttons["easy"].clicked(pos):
                     difficulty = "easy"
-                    info = "Difficulté facile sélectionnée."
                 elif buttons["medium"].clicked(pos):
                     difficulty = "medium"
-                    info = "Difficulté moyenne sélectionnée."
                 elif buttons["hard"].clicked(pos):
                     difficulty = "hard"
-                    info = "Difficulté difficile sélectionnée."
+
+                # Bouton START
                 elif buttons["start"].clicked(pos):
                     if mode in ("create", "join") and reseau.connexion is None:
-                        info = "Impossible de démarrer: connexion réseau non établie."
+                        info = "Patience... La connexion réseau n'est pas encore établie."
                     else:
                         return {"mode": mode, "difficulty": difficulty}
 
+        # --- MISE A JOUR VISUELLE DU BOUTON START ---
         if reseau.connexion is not None:
-            info = "Connexion réseau établie. Cliquez sur Lancer la partie."
+            info = "Connexion établie ! Cliquez sur Lancer."
+            buttons["start"].text = "Lancer la partie"
+            buttons["start"].fill = GREEN
+        elif mode == "create":
+            buttons["start"].text = "En attente..."
+            buttons["start"].fill = GREY
+        elif mode == "join":
+            buttons["start"].text = "Recherche..."
+            buttons["start"].fill = GREY
+        else:
+            buttons["start"].text = "Lancer la partie"
+            buttons["start"].fill = GREEN
 
+        # Dessin de l'interface
         window_surface.fill(GREY)
         draw_lines()
         draw_centered_text("Bataille Navale", menu_title_font, 95)
@@ -828,17 +851,16 @@ def run_main_menu():
 
         for name, btn in buttons.items():
             active = (name == mode) or (name == difficulty)
-            if name == "start":
-                active = True
+            if name == "start": active = True
             btn.draw(active)
 
-        # Dessin du logo audio
         audio_logo.draw(window_surface)
 
         info_panel = pygame.Rect(120, 590, 940, 52)
         pygame.draw.rect(window_surface, DARK_GREY, info_panel, border_radius=8)
         surf = small_font.render(info, True, WHITE)
         window_surface.blit(surf, surf.get_rect(center=info_panel.center))
+
         pygame.display.update()
         clock.tick(30)
 
