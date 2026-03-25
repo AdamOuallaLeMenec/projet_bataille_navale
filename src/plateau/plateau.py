@@ -53,85 +53,60 @@ class Plateau:
                 return cell
         return None
 
-    def get_cell_from_pixel(self, x: int, y: int) -> Case | None:
-        for cell in self.cells:
-            if cell.rect and cell.rect.collidepoint(x, y):
-                return cell
-        return None
+    def respecte_voisinage(self, cases_proposees: list[Case], bateau_actuel: Bateau) -> bool:
+        """Vérifie qu'aucun autre bateau n'est à moins d'une case (8 directions)."""
+        for case in cases_proposees:
+            for dr in range(-1, 2):
+                for dc in range(-1, 2):
+                    r, c = case.ligne + dr, case.colonne + dc
+                    if self.estDansGrille(r, c):
+                        voisine = self.getCase(r, c)
+                        if voisine and voisine.bateau and voisine.bateau != bateau_actuel:
+                            return False
+        return True
 
-    def enregistrerCase(self, c: Case) -> None:
-        if c not in self.casesImportantes:
-            self.casesImportantes.append(c)
-
-    def supprimerCaseSiVide(self, ligne: int, colonne: int) -> None:
-        case = self.getCase(ligne, colonne)
-        if case and not case.estImportante() and case in self.casesImportantes:
-            self.casesImportantes.remove(case)
-
-    def calculer_cases_pour_bateau(self, b: Bateau, start_row: int, start_col: int, alignement: Alignement) -> list[Case] | None:
+    def calculer_cases_pour_bateau(self, b: Bateau, start_row: int, start_col: int, alignement: Alignement) -> list[
+                                                                                                                   Case] | None:
         cases = []
         for i in range(b.taille):
             row = start_row + (0 if alignement == Alignement.Horizontal else i)
             col = start_col + (i if alignement == Alignement.Horizontal else 0)
-            if not self.estDansGrille(row, col):
-                return None
+            if not self.estDansGrille(row, col): return None
             case = self.getCase(row, col)
-            if case is None:
-                return None
-            if case.bateau is not None and case.bateau != b:
-                return None
+            if case is None or (case.bateau is not None and case.bateau != b): return None
             cases.append(case)
         return cases
 
     def placementValide(self, b: Bateau, cases: list[Case]) -> bool:
-        return cases is not None and len(cases) == b.taille
+        """Validation finale incluant la règle de voisinage."""
+        if cases is None or len(cases) != b.taille:
+            return False
+        return self.respecte_voisinage(cases, b)
 
     def placerBateau(self, b: Bateau, cases: list[Case]) -> None:
-        if b not in self.bateaux:
-            self.bateaux.append(b)
+        if b not in self.bateaux: self.bateaux.append(b)
         for cell in self.cells:
-            if cell.bateau == b:
-                cell.retirerBateau()
+            if cell.bateau == b: cell.retirerBateau()
         for c in cases:
             c.placerBateau(b)
-            self.enregistrerCase(c)
+            if c not in self.casesImportantes: self.casesImportantes.append(c)
         b.assignerCases(cases)
-        b.row = cases[0].ligne
-        b.column = cases[0].colonne
+        b.row, b.column = cases[0].ligne, cases[0].colonne
 
     def tirer(self, cible: Case) -> ResultatTir:
-        if cible is None:
-            return ResultatTir.INVALIDE
-        return cible.recevoirTir()
+        return cible.recevoirTir() if cible else ResultatTir.INVALIDE
 
-    def deplacementValide(self, b: Bateau, dir: "DirectionDeplacement") -> bool:
+    def deplacerBateau(self, b: Bateau, dir: DirectionDeplacement) -> ResultatDeplacement:
+        if b is None: return ResultatDeplacement.INVALIDE
+        if any(c.is_clicked for c in b.getCasesOccupees()): return ResultatDeplacement.BLOQUE
         nouvelles = b.calculerCasesApresDeplacement(dir, self)
-        return nouvelles is not None
-
-    def mettreAJourCasesApresDeplacement(self, anciennes: list[Case], nouvelles: list[Case]) -> None:
-        bateau = anciennes[0].bateau if anciennes else None
-        for c in anciennes:
-            c.retirerBateau()
-        if bateau:
-            self.placerBateau(bateau, nouvelles)
-
-    def deplacerBateau(self, b: Bateau, dir: "DirectionDeplacement") -> ResultatDeplacement:
-        if b is None:
+        if nouvelles is None or not self.respecte_voisinage(nouvelles, b):
             return ResultatDeplacement.INVALIDE
-        if any(c.is_clicked for c in b.getCasesOccupees()):
-            return ResultatDeplacement.BLOQUE
-        nouvelles = b.calculerCasesApresDeplacement(dir, self)
-        if nouvelles is None:
-            return ResultatDeplacement.INVALIDE
+
         anciennes = list(b.getCasesOccupees())
-        self.mettreAJourCasesApresDeplacement(anciennes, nouvelles)
+        for c in anciennes: c.retirerBateau()
+        self.placerBateau(b, nouvelles)
         return ResultatDeplacement.DEPLACE
-
-    def aUnPorteAvionVivant(self) -> bool:
-        return any(b.nom == "Porte-avion" and not b.estCoule() for b in self.bateaux)
-
-    def compterNaviresVivantsHorsPatrouilleurs(self) -> int:
-        return sum(1 for b in self.bateaux if b.nom != "Patrouilleur" and not b.estCoule())
 
     def tousLesBateauxCoules(self) -> bool:
         return all(b.estCoule() for b in self.bateaux) if self.bateaux else False
