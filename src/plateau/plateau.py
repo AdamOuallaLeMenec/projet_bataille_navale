@@ -12,16 +12,17 @@ class ResultatDeplacement(Enum):
 
 
 class Plateau:
-    NB_LIGNES = 10
-    NB_COLONNES = 10
+    NB_LIGNES = 26
+    NB_COLONNES = 50
 
-    def __init__(self, x_loc=55, y_loc=160, grid_size=402, cell_width=40):
+    def __init__(self, x_loc=55, y_loc=100, grid_size=402, cell_width=20):
         self.x_loc = x_loc
         self.y_loc = y_loc
-        self.grid_size = grid_size
+        self.grid_size_w = self.NB_COLONNES * self.cell_width
+        self.grid_size_h = self.NB_LIGNES * self.cell_width
         self.cell_width = cell_width
-        self.rect = pygame.Rect(x_loc, y_loc, grid_size, grid_size)
-        self.surface = pygame.Surface((grid_size, grid_size))
+        self.rect = pygame.Rect(x_loc, y_loc, self.grid_size_w, self.grid_size_h)
+        self.surface = pygame.Surface((self.grid_size_w, self.grid_size_h))
         self.casesImportantes: list[Case] = []
         self.bateaux: list[Bateau] = []
         self.cells: list[Case] = []
@@ -37,12 +38,25 @@ class Plateau:
                 case.rect = pygame.Rect(x, y, self.cell_width, self.cell_width)
                 self.cells.append(case)
 
-    def draw_grid(self):
+    def draw_grid(self,window_surface, font):
         self.surface.fill((60, 145, 235))
         for i in range(self.NB_COLONNES + 1):
             offset = i * self.cell_width
-            pygame.draw.line(self.surface, (0, 0, 0), (offset, 0), (offset, self.grid_size), 4)
-            pygame.draw.line(self.surface, (0, 0, 0), (0, offset), (self.grid_size, offset), 4)
+            pygame.draw.line(self.surface, (0, 0, 0), (offset, 0), (offset, self.grid_size_h), 1)
+        for j in range(self.NB_LIGNES + 1):
+            offset = j * self.cell_width
+            pygame.draw.line(self.surface, (0, 0, 0), (0, offset), (self.grid_size_w, offset), 1)
+        window_surface.blit(self.surface, (self.x_loc, self.y_loc))
+        for j in range(self.NB_LIGNES):
+            lettre = chr(65 + j)
+            txt = font.render(lettre, True, (0, 0, 0))
+            rect = txt.get_rect(center=(self.x_loc - 20, self.y_loc + j * self.cell_width + self.cell_width // 2))
+            window_surface.blit(txt, rect)
+        for i in range(self.NB_COLONNES):
+            chiffre = str(i + 1)
+            txt = font.render(chiffre, True, (0, 0, 0))
+            rect = txt.get_rect(center=(self.x_loc + i * self.cell_width + self.cell_width // 2, self.y_loc - 15))
+            window_surface.blit(txt, rect)
 
     def estDansGrille(self, ligne: int, colonne: int) -> bool:
         return 0 <= ligne < self.NB_LIGNES and 0 <= colonne < self.NB_COLONNES
