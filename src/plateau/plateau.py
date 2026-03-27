@@ -38,7 +38,7 @@ class Plateau:
                 case.rect = pygame.Rect(x, y, self.cell_width, self.cell_width)
                 self.cells.append(case)
 
-    def draw_grid(self,window_surface, font):
+    def draw_grid(self, window_surface: pygame.Surface, font: pygame.font.Font):
         self.surface.fill((60, 145, 235))
         for i in range(self.NB_COLONNES + 1):
             offset = i * self.cell_width
