@@ -18,9 +18,9 @@ class Plateau:
     def __init__(self, x_loc=55, y_loc=100, grid_size=402, cell_width=20):
         self.x_loc = x_loc
         self.y_loc = y_loc
+        self.cell_width = cell_width
         self.grid_size_w = self.NB_COLONNES * self.cell_width
         self.grid_size_h = self.NB_LIGNES * self.cell_width
-        self.cell_width = cell_width
         self.rect = pygame.Rect(x_loc, y_loc, self.grid_size_w, self.grid_size_h)
         self.surface = pygame.Surface((self.grid_size_w, self.grid_size_h))
         self.casesImportantes: list[Case] = []
