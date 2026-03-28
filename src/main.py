@@ -445,17 +445,17 @@ class JoueurVirtuel(Joueur):
         return random.choice(list(DirectionDeplacement))
 
     def randomise_ships(self):
-        available_cells = [cell for cell in itertools.product(range(10), range(10))]
+        available_cells = [cell for cell in itertools.product(range(NB_LIGNES), range(NB_COLONNES))]
         for ship in self.plateau.bateaux:
             while True:
                 alignement = random.choice([Alignement.Horizontal, Alignement.Vertical])
                 ship.orienter(alignement)
                 if alignement == Alignement.Horizontal:
-                    row = random.randint(0, 9)
-                    col = random.randint(0, 10 - ship.taille)
+                    row = random.randint(0, NB_LIGNES - 1)
+                    col = random.randint(0, NB_COLONNES - ship.taille)
                 else:
-                    row = random.randint(0, 10 - ship.taille)
-                    col = random.randint(0, 9)
+                    row = random.randint(0, NB_LIGNES - ship.taille)
+                    col = random.randint(0, NB_COLONNES - 1)
                 coords = []
                 for i in range(ship.taille):
                     r = row + (0 if alignement == Alignement.Horizontal else i)
@@ -632,7 +632,6 @@ def draw_grid_labels(plateau: Plateau):
     """
     cw = plateau.cell_width
 
-    # --- Lettres A-Z (lignes) ---
     for ligne in range(plateau.NB_LIGNES):
         lettre = chr(ord('A') + ligne)
         surf   = label_font.render(lettre, True, BLACK)
@@ -640,7 +639,6 @@ def draw_grid_labels(plateau: Plateau):
         y = plateau.y_loc + ligne * cw + cw // 2 - surf.get_height() // 2
         window_surface.blit(surf, (x, y))
 
-    # --- Numéros 1-50 (colonnes) ---
     for col in range(plateau.NB_COLONNES):
         nombre = str(col + 1)
         surf   = label_font.render(nombre, True, BLACK)
@@ -649,14 +647,14 @@ def draw_grid_labels(plateau: Plateau):
         window_surface.blit(surf, (x, y))
 
 def display_headers(turn_mode: ActionTour, alignement: Alignement):
-    draw_centered_text("Bataille Navale", title_font, 42)
+    draw_centered_text("Bataille Navale", title_font, 40)
     player_text = header_font.render("GRILLE JOUEUR", True, BLACK)
     enemy_text = header_font.render("GRILLE ENNEMIE", True, BLACK)
     mode_text = body_font.render(f"Mode actuel : {'TIR' if turn_mode == ActionTour.Tirer else 'DEPLACEMENT'}", True,
                                  BLACK)
     axis_text = small_font.render(f"Sens de deplacement : {alignement.value}", True, BLACK)
-    window_surface.blit(player_text, player_text.get_rect(center=(255, 132)))
-    window_surface.blit(enemy_text, enemy_text.get_rect(center=(925, 132)))
+    window_surface.blit(player_text, player_text.get_rect(center=(480, 140)))
+    window_surface.blit(enemy_text, enemy_text.get_rect(center=(1440, 140)))
     window_surface.blit(mode_text, mode_text.get_rect(center=(WINDOW_W // 2, 85)))
     window_surface.blit(axis_text, axis_text.get_rect(center=(WINDOW_W // 2, 115)))
 
