@@ -1,6 +1,7 @@
 from __future__ import annotations
 from enum import Enum
 from typing import TYPE_CHECKING
+import pygame
 
 if TYPE_CHECKING:
     from navires.bateau import Bateau
@@ -30,7 +31,7 @@ class Case:
         self.x_coord = x_coord
         self.y_coord = y_coord
         self.cell_width = cell_width
-        self.rect = None
+        self.rect = pygame.Rect(x_coord, y_coord, cell_width, cell_width)
         self.is_clicked = False
 
     def estTouchee(self) -> bool:

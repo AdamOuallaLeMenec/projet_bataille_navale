@@ -9,6 +9,12 @@ import threading
 import pygame
 from pygame.locals import QUIT, MOUSEBUTTONDOWN
 #
+from jeu.fin_partie import Partie
+from joueurs.ia import JoueurVirtuel
+from joueurs.joueur import ActionTour, Joueur, JoueurHumain
+from navires.bateau import Alignement, Bateau, DirectionDeplacement
+from plateau.case import Case, EtatCase, ResultatTir
+from plateau.plateau import Plateau, ResultatDeplacement
 from reseauLocal import ReseauLocal
 from jeuLocal import run_network_game
 
@@ -31,19 +37,17 @@ SOUND_ENABLED = True
 MUSIC_ENABLED = True
 VOLUME_LEVEL = 0.4
 
-NB_LIGNES    = 26
-NB_COLONNES  = 50
-CELL_SIZE    = 16
-GRID_W       = NB_COLONNES * CELL_SIZE
-GRID_H       = NB_LIGNES   * CELL_SIZE 
-
+WINDOW_W = 1920
+WINDOW_H = 720
 LABEL_MARGIN = 22
-
-WINDOW_W     = 1920
-WINDOW_H     = 720
-GRID_Y       = LABEL_MARGIN + 90
+NB_LIGNES = 26
+NB_COLONNES = 50
+CELL_SIZE = 16
+GRID_W = NB_COLONNES * CELL_SIZE
+GRID_H = NB_LIGNES * CELL_SIZE
+GRID_Y = LABEL_MARGIN + 90
 PLAYER_GRID_X = LABEL_MARGIN + 20
-ENEMY_GRID_X  = PLAYER_GRID_X + GRID_W + 80
+ENEMY_GRID_X = PLAYER_GRID_X + GRID_W + 80
 
 SHIPS = {
     "Porte-avion": [5, "Sprites/Battleship5.png"],
@@ -52,44 +56,6 @@ SHIPS = {
     "Patrouilleur": [3, "Sprites/RescueShip3.png"],
     "Destroyer": [2, "Sprites/Destroyer2.png"],
 }
-
-
-class EtatCase(Enum):
-    VIDE = "VIDE"
-    OCCUPEE = "OCCUPEE"
-    TOUCHEE = "TOUCHEE"
-    RATEE = "RATEE"
-
-
-class ResultatTir(Enum):
-    RATE = "RATE"
-    TOUCHE = "TOUCHE"
-    COULE = "COULE"
-    DEJA_TIRE = "DEJA_TIRE"
-    INVALIDE = "INVALIDE"
-
-
-class ResultatDeplacement(Enum):
-    DEPLACE = "DEPLACE"
-    BLOQUE = "BLOQUE"
-    INVALIDE = "INVALIDE"
-
-
-class ActionTour(Enum):
-    Tirer = "Tirer"
-    Deplacer = "Deplacer"
-
-
-class DirectionDeplacement(Enum):
-    NORD = "NORD"
-    SUD = "SUD"
-    EST = "EST"
-    OUEST = "OUEST"
-
-
-class Alignement(Enum):
-    Horizontal = "Horizontal"
-    Vertical = "Vertical"
 
 
 pygame.init()
@@ -113,458 +79,17 @@ def load_font(relative: str, size: int):
         return pygame.font.SysFont(None, size)
 
 
-title_font      = load_font("Fonts/INVASION2000.TTF", 44)
+title_font = load_font("Fonts/INVASION2000.TTF", 44)
 menu_title_font = load_font("Fonts/INVASION2000.TTF", 58)
-header_font     = load_font("Fonts/ARCADECLASSIC.TTF", 22)
-body_font       = pygame.font.SysFont(None, 26)
-small_font      = pygame.font.SysFont(None, 20)
-button_font     = pygame.font.SysFont(None, 24)
-menu_font       = pygame.font.SysFont(None, 36)
-label_font      = pygame.font.SysFont(None, 14)
+header_font = load_font("Fonts/ARCADECLASSIC.TTF", 22)
+body_font = pygame.font.SysFont(None, 26)
+small_font = pygame.font.SysFont(None, 20)
+button_font = pygame.font.SysFont(None, 24)
+menu_font = pygame.font.SysFont(None, 36)
+label_font = pygame.font.SysFont(None, 14)
 
 
-class Case:
-    def __init__(self, ligne: int, colonne: int, x_coord: int, y_coord: int, cell_width: int):
-        self.ligne = ligne
-        self.colonne = colonne
-        self.etat = EtatCase.VIDE
-        self.bateau = None
-        self.x_coord = x_coord
-        self.y_coord = y_coord
-        self.cell_width = cell_width
-        self.rect = pygame.Rect(x_coord, y_coord, cell_width, cell_width)
-        self.is_clicked = False
 
-    def estTouchee(self) -> bool:
-        return self.etat == EtatCase.TOUCHEE
-
-    def estOccupee(self) -> bool:
-        return self.bateau is not None
-
-    def estImportante(self) -> bool:
-        return self.estOccupee() or self.is_clicked
-
-    def placerBateau(self, b: "Bateau") -> None:
-        self.bateau = b
-        self.etat = EtatCase.OCCUPEE
-
-    def retirerBateau(self) -> None:
-        self.bateau = None
-        self.etat = EtatCase.VIDE if not self.is_clicked else self.etat
-
-    def recevoirTir(self) -> ResultatTir:
-        if self.is_clicked:
-            return ResultatTir.DEJA_TIRE
-
-        self.is_clicked = True
-        if self.bateau is None:
-            self.etat = EtatCase.RATEE
-            return ResultatTir.RATE
-
-        self.etat = EtatCase.TOUCHEE
-        self.bateau.encaisserTir()
-        if self.bateau.estCoule():
-            for c in self.bateau.getCasesOccupees():
-                c.etat = EtatCase.TOUCHEE
-            return ResultatTir.COULE
-        return ResultatTir.TOUCHE
-
-
-class Bateau(pygame.sprite.Sprite):
-    def __init__(self, nom: str, taille: int, image: Path, x=0, y=0):
-        super().__init__()
-        self.nom = nom
-        self.taille = taille
-        self.pointsDeVie = taille
-        self.casesOccupees: list[Case] = []
-        self.alignement = Alignement.Horizontal
-        self.original_image = pygame.image.load(image).convert_alpha()
-        self.image = self.original_image.copy()
-        self.rect = self.image.get_rect()
-        self.rect.x = x
-        self.rect.centery = y
-        self.row = 0
-        self.column = 0
-
-    def getNom(self) -> str:
-        return self.nom
-
-    def getTaille(self) -> int:
-        return self.taille
-
-    def getCasesOccupees(self) -> list[Case]:
-        return self.casesOccupees
-
-    def assignerCases(self, cases: list[Case]) -> None:
-        self.casesOccupees = cases
-
-    def encaisserTir(self) -> None:
-        self.pointsDeVie -= 1
-
-    def estCoule(self) -> bool:
-        return self.pointsDeVie <= 0
-
-    def orienter(self, alignement: Alignement) -> None:
-        self.alignement = alignement
-        angle = 0 if alignement == Alignement.Horizontal else 90
-        center = self.rect.center
-        self.image = pygame.transform.rotate(self.original_image, angle)
-        self.rect = self.image.get_rect(center=center)
-
-    def calculerCasesApresDeplacement(self, dir: DirectionDeplacement, plateau: "Plateau") -> list[Case] | None:
-        delta_row, delta_col = {
-            DirectionDeplacement.NORD: (-1, 0),
-            DirectionDeplacement.SUD: (1, 0),
-            DirectionDeplacement.EST: (0, 1),
-            DirectionDeplacement.OUEST: (0, -1),
-        }[dir]
-        new_row = self.row + delta_row
-        new_col = self.column + delta_col
-        return plateau.calculer_cases_pour_bateau(self, new_row, new_col, self.alignement)
-
-
-class Plateau:
-    NB_LIGNES = 26
-    NB_COLONNES = 50
-
-    def __init__(self, x_loc=PLAYER_GRID_X, y_loc=GRID_Y):
-        self.x_loc = x_loc
-        self.y_loc = y_loc
-        self.cell_width = CELL_SIZE
-        self.rect = pygame.Rect(x_loc, y_loc, GRID_W, GRID_H)
-        self.surface = pygame.Surface((GRID_W, GRID_H))
-        self.casesImportantes: list[Case] = []
-        self.bateaux: list[Bateau] = []
-        self.cells:   list[Case] = []
-        self.initialiserGrille()
-
-    def initialiserGrille(self) -> None:
-        self.cells = []
-        for ligne in range(self.NB_LIGNES):
-            for colonne in range(self.NB_COLONNES):
-                x = self.x_loc + colonne * self.cell_width
-                y = self.y_loc + ligne * self.cell_width
-                self.cells.append(Case(ligne, colonne, x, y, self.cell_width))
-        self.draw_grid()
-
-    def draw_grid(self):
-        self.surface.fill(BLUE)
-        for i in range(self.NB_COLONNES + 1):
-            x = i * self.cell_width
-            pygame.draw.line(self.surface, BLACK, (x, 0), (x, GRID_H), 1)
-        for i in range(self.NB_LIGNES + 1):
-            y = i * self.cell_width
-            pygame.draw.line(self.surface, BLACK, (0, y), (GRID_W, y), 1)
-
-
-    def estDansGrille(self, ligne: int, colonne: int) -> bool:
-        return 0 <= ligne < self.NB_LIGNES and 0 <= colonne < self.NB_COLONNES
-
-    def getCase(self, ligne: int, colonne: int) -> Case | None:
-        for cell in self.cells:
-            if cell.ligne == ligne and cell.colonne == colonne:
-                return cell
-        return None
-
-    def get_cell_from_pixel(self, x: int, y: int) -> Case | None:
-        for cell in self.cells:
-            if cell.rect.collidepoint(x, y):
-                return cell
-        return None
-
-    def enregistrerCase(self, c: Case) -> None:
-        if c not in self.casesImportantes:
-            self.casesImportantes.append(c)
-
-    def supprimerCaseSiVide(self, ligne: int, colonne: int) -> None:
-        case = self.getCase(ligne, colonne)
-        if case and not case.estImportante() and case in self.casesImportantes:
-            self.casesImportantes.remove(case)
-
-    def respecte_voisinage(self, cases_proposees: list[Case], bateau_actuel: Bateau) -> bool:
-        """Vérifie qu'aucun autre bateau n'est présent dans les 8 cases autour (diagonales incluses)."""
-        for case in cases_proposees:
-            for dr in range(-1, 2):
-                for dc in range(-1, 2):
-                    r, c = case.ligne + dr, case.colonne + dc
-                    if self.estDansGrille(r, c):
-                        voisine = self.getCase(r, c)
-                        if voisine and voisine.bateau and voisine.bateau != bateau_actuel:
-                            return False
-        return True
-
-    def calculer_cases_pour_bateau(self, b: Bateau, start_row: int, start_col: int, alignement: Alignement) -> list[
-                                                                                                                   Case] | None:
-        cases = []
-        for i in range(b.taille):
-            row = start_row + (0 if alignement == Alignement.Horizontal else i)
-            col = start_col + (i if alignement == Alignement.Horizontal else 0)
-            if not self.estDansGrille(row, col):
-                return None
-            case = self.getCase(row, col)
-            if case is None:
-                return None
-            if case.bateau is not None and case.bateau != b:
-                return None
-            cases.append(case)
-        return cases
-
-    def placementValide(self, b: Bateau, cases: list[Case]) -> bool:
-        if cases is None or len(cases) != b.taille:
-            return False
-        # Ajout de la règle de voisinage
-        return self.respecte_voisinage(cases, b)
-
-    def placerBateau(self, b: Bateau, cases: list[Case]) -> None:
-        if b not in self.bateaux:
-            self.bateaux.append(b)
-        for cell in self.cells:
-            if cell.bateau == b:
-                cell.retirerBateau()
-        for c in cases:
-            c.placerBateau(b)
-            self.enregistrerCase(c)
-        b.assignerCases(cases)
-        b.row = cases[0].ligne
-        b.column = cases[0].colonne
-        anchor = cases[0]
-        if b.alignement == Alignement.Horizontal:
-            b.rect.midleft = anchor.rect.midleft
-        else:
-            b.rect.midtop = anchor.rect.midtop
-
-    def tirer(self, cible: Case) -> ResultatTir:
-        if cible is None:
-            return ResultatTir.INVALIDE
-        return cible.recevoirTir()
-
-    def deplacementValide(self, b: Bateau, dir: DirectionDeplacement) -> bool:
-        nouvelles = b.calculerCasesApresDeplacement(dir, self)
-        # Ajout de la vérification du voisinage pour le déplacement
-        if nouvelles is None or not self.placementValide(b, nouvelles):
-            return False
-        return True
-
-    def mettreAJourCasesApresDeplacement(self, anciennes: list[Case], nouvelles: list[Case]) -> None:
-        bateau = anciennes[0].bateau if anciennes else None
-        for c in anciennes:
-            c.retirerBateau()
-        if bateau:
-            self.placerBateau(bateau, nouvelles)
-
-    def deplacerBateau(self, b: Bateau, dir: DirectionDeplacement) -> ResultatDeplacement:
-        if b is None:
-            return ResultatDeplacement.INVALIDE
-        if any(c.is_clicked for c in b.getCasesOccupees()):
-            return ResultatDeplacement.BLOQUE
-        nouvelles = b.calculerCasesApresDeplacement(dir, self)
-        if nouvelles is None or not self.placementValide(b, nouvelles):
-            return ResultatDeplacement.INVALIDE
-        anciennes = list(b.getCasesOccupees())
-        self.mettreAJourCasesApresDeplacement(anciennes, nouvelles)
-        return ResultatDeplacement.DEPLACE
-
-    def aUnPorteAvionVivant(self) -> bool:
-        return any(b.nom == "Porte-avion" and not b.estCoule() for b in self.bateaux)
-
-    def compterNaviresVivantsHorsPatrouilleurs(self) -> int:
-        return sum(1 for b in self.bateaux if b.nom != "Patrouilleur" and not b.estCoule())
-
-    def tousLesBateauxCoules(self) -> bool:
-        return all(b.estCoule() for b in self.bateaux) if self.bateaux else False
-
-
-class Joueur:
-    def __init__(self, nom: str, plateau: Plateau):
-        self.nom = nom
-        self.plateau = plateau
-
-    def getNom(self) -> str:
-        return self.nom
-
-    def getPlateau(self) -> Plateau:
-        return self.plateau
-
-    def choisirAction(self) -> ActionTour:
-        return ActionTour.Tirer
-
-    def choisirCible(self, ennemi: "Joueur") -> Case | None:
-        return None
-
-    def choisirDeplacement(self) -> DirectionDeplacement:
-        return DirectionDeplacement.EST
-
-    def tirer(self, ennemi: "Joueur", cible: Case) -> ResultatTir:
-        return ennemi.getPlateau().tirer(cible)
-
-    def deplacer(self, bateau: Bateau, direction: DirectionDeplacement) -> ResultatDeplacement:
-        return self.plateau.deplacerBateau(bateau, direction)
-
-    def placerFlotte(self) -> None:
-        pass
-
-
-class JoueurHumain(Joueur):
-    pass
-
-
-class JoueurVirtuel(Joueur):
-    def __init__(self, nom: str, plateau: Plateau, difficulty="medium"):
-        super().__init__(nom, plateau)
-        self.derniereCaseTouchee: tuple[int, int] | None = None
-        self.second_hit: tuple[int, int] | None = None
-        self.tested_no_hit = None
-        self.tested_no_hit_2 = None
-        self.difficulty = difficulty
-        self.available_cells = self._populate_available_cells()
-
-    def _populate_available_cells(self):
-        return list(itertools.product(range(NB_LIGNES), range(NB_COLONNES)))
-
-    def prendreDecision(self, ennemi: Joueur) -> ActionTour:
-        return ActionTour.Tirer
-
-    def choisirCibleIntelligente(self, ennemi: Joueur) -> Case:
-        row, col = self.enemy_turn()
-        return ennemi.getPlateau().getCase(row, col)
-
-    def trouverCasesAdjacentesValides(self, ennemi: Joueur, centre: Case):
-        plateau = ennemi.getPlateau()
-        coords = [
-            (centre.ligne + 1, centre.colonne),
-            (centre.ligne - 1, centre.colonne),
-            (centre.ligne, centre.colonne + 1),
-            (centre.ligne, centre.colonne - 1),
-        ]
-        return [plateau.getCase(r, c) for r, c in coords if plateau.estDansGrille(r, c)]
-
-    def choisirDirectionDefensive(self) -> DirectionDeplacement:
-        return random.choice(list(DirectionDeplacement))
-
-    def choisirDirectionOffensive(self, ennemi: Joueur) -> DirectionDeplacement:
-        return random.choice(list(DirectionDeplacement))
-
-    def randomise_ships(self):
-        available_cells = [cell for cell in itertools.product(range(NB_LIGNES), range(NB_COLONNES))]
-        for ship in self.plateau.bateaux:
-            while True:
-                alignement = random.choice([Alignement.Horizontal, Alignement.Vertical])
-                ship.orienter(alignement)
-                if alignement == Alignement.Horizontal:
-                    row = random.randint(0, NB_LIGNES - 1)
-                    col = random.randint(0, NB_COLONNES - ship.taille)
-                else:
-                    row = random.randint(0, NB_LIGNES - ship.taille)
-                    col = random.randint(0, NB_COLONNES - 1)
-                coords = []
-                for i in range(ship.taille):
-                    r = row + (0 if alignement == Alignement.Horizontal else i)
-                    c = col + (i if alignement == Alignement.Horizontal else 0)
-                    coords.append((r, c))
-                if all(coord in available_cells for coord in coords):
-                    cases = [self.plateau.getCase(r, c) for r, c in coords]
-                    if self.plateau.placementValide(ship, cases):
-                        self.plateau.placerBateau(ship, cases)
-                        available_cells = [cell for cell in available_cells if cell not in coords]
-                        break
-
-    def reset_hit_logs(self):
-        self.derniereCaseTouchee = None
-        self.second_hit = None
-        self.tested_no_hit = None
-        self.tested_no_hit_2 = None
-
-    def random_pick(self):
-        return random.choice(self.available_cells)
-
-    def pick_target_after_first_hit(self):
-        next_targets = [
-            (self.derniereCaseTouchee[0] + 1, self.derniereCaseTouchee[1]),
-            (self.derniereCaseTouchee[0] - 1, self.derniereCaseTouchee[1]),
-            (self.derniereCaseTouchee[0], self.derniereCaseTouchee[1] + 1),
-            (self.derniereCaseTouchee[0], self.derniereCaseTouchee[1] - 1),
-        ]
-        verified = [cell for cell in next_targets if cell in self.available_cells]
-        if not verified:
-            return self.random_pick()
-        return verified[0] if self.difficulty == "hard" else random.choice(verified)
-
-    def pick_target_after_second_hit(self, check_distance=1):
-        if self.derniereCaseTouchee[0] == self.second_hit[0]:
-            next_targets = [
-                (self.derniereCaseTouchee[0], max(self.derniereCaseTouchee[1], self.second_hit[1]) + check_distance),
-                (self.derniereCaseTouchee[0], min(self.derniereCaseTouchee[1], self.second_hit[1]) - check_distance),
-            ]
-        else:
-            next_targets = [
-                (max(self.derniereCaseTouchee[0], self.second_hit[0]) + check_distance, self.derniereCaseTouchee[1]),
-                (min(self.derniereCaseTouchee[0], self.second_hit[0]) - check_distance, self.derniereCaseTouchee[1]),
-            ]
-        verified = [cell for cell in next_targets if cell in self.available_cells]
-        if verified:
-            return verified[0] if self.difficulty == "hard" else random.choice(verified)
-        if self.tested_no_hit_2:
-            self.second_hit = None
-            return self.enemy_turn()
-        return self.pick_target_after_second_hit(check_distance + 1)
-
-    def enemy_turn(self):
-        if self.difficulty == "easy":
-            pick = self.random_pick()
-        elif not self.derniereCaseTouchee:
-            pick = self.random_pick()
-        elif self.tested_no_hit_2:
-            self.second_hit = None
-            pick = self.pick_target_after_first_hit()
-        elif self.derniereCaseTouchee and not self.second_hit:
-            pick = self.pick_target_after_first_hit()
-        else:
-            pick = self.pick_target_after_second_hit()
-        self.available_cells.remove(pick)
-        return pick
-
-
-class Partie:
-    def __init__(self, joueur1: Joueur, joueur2: Joueur):
-        self.joueur1 = joueur1
-        self.joueur2 = joueur2
-        self.joueurCourant = joueur1
-        self.ToursResatants = 0
-        self.Vainqueur = None
-
-    def initialiser(self):
-        self.ToursResatants = self.calculerToursInitials(self.joueur1)
-
-    def demarrer(self):
-        self.initialiser()
-
-    def demarrerTour(self):
-        pass
-
-    def jouerTour(self):
-        pass
-
-    def calculerToursInitials(self, j: Joueur) -> int:
-        return 1 + self.calculerBonusFlotte(j)
-
-    def calculerBonusFlotte(self, j: Joueur) -> int:
-        return 1 if j.getPlateau().aUnPorteAvionVivant() else 0
-
-    def accorderTourSupplementaire(self) -> None:
-        self.ToursResatants += 1
-
-    def passerAuJoueurSuivant(self):
-        self.joueurCourant = self.joueur2 if self.joueurCourant == self.joueur1 else self.joueur1
-
-    def estTerminee(self) -> bool:
-        return self.joueur1.getPlateau().tousLesBateauxCoules() or self.joueur2.getPlateau().tousLesBateauxCoules()
-
-    def determinerVainqueur(self) -> Joueur | None:
-        if self.joueur1.getPlateau().tousLesBateauxCoules():
-            self.Vainqueur = self.joueur2
-        elif self.joueur2.getPlateau().tousLesBateauxCoules():
-            self.Vainqueur = self.joueur1
-        return self.Vainqueur
 
 
 class CellHit(pygame.sprite.Sprite):
@@ -624,27 +149,6 @@ def draw_lines():
     pygame.draw.line(window_surface, DARK_GREY, (10, 10), (10, 690), 3)
     pygame.draw.line(window_surface, DARK_GREY, (10, 600), (1170, 600), 3)
 
-def draw_grid_labels(plateau: Plateau):
-    """
-    Affiche :
-      - les lettres A–Z sur l'axe vertical (à gauche de la grille)
-      - les numéros 1–50 sur l'axe horizontal (au-dessus de la grille)
-    """
-    cw = plateau.cell_width
-
-    for ligne in range(plateau.NB_LIGNES):
-        lettre = chr(ord('A') + ligne)
-        surf   = label_font.render(lettre, True, BLACK)
-        x = plateau.x_loc - surf.get_width() - 3
-        y = plateau.y_loc + ligne * cw + cw // 2 - surf.get_height() // 2
-        window_surface.blit(surf, (x, y))
-
-    for col in range(plateau.NB_COLONNES):
-        nombre = str(col + 1)
-        surf   = label_font.render(nombre, True, BLACK)
-        x = plateau.x_loc + col * cw + cw // 2 - surf.get_width() // 2
-        y = plateau.y_loc - surf.get_height() - 2
-        window_surface.blit(surf, (x, y))
 
 def display_headers(turn_mode: ActionTour, alignement: Alignement):
     draw_centered_text("Bataille Navale", title_font, 40)
@@ -694,8 +198,8 @@ def refresh_screen(player_plateau, enemy_plateau, ship_list, hit_list, buttons, 
                    selected=None):
     window_surface.fill(GREY)
     draw_lines()
-    player_plateau.draw_grid()
-    enemy_plateau.draw_grid()
+    player_plateau.draw_grid(window_surface, font=small_font)
+    enemy_plateau.draw_grid(window_surface, font=small_font)
     window_surface.blit(player_plateau.surface, player_plateau.rect)
     window_surface.blit(enemy_plateau.surface, enemy_plateau.rect)
     display_headers(turn_mode, alignement)
@@ -778,8 +282,8 @@ def setup_menu_buttons():
         "join": TextButton("join", "Rejoindre une partie", 110, 305, 320, 58),
         "ia": TextButton("ia", "Jouer contre l'IA", 110, 380, 320, 58),
 
-        "easy": TextButton("easy", "IA facile", 740, 255, 230, 54),
-        "medium": TextButton("medium", "IA moyenne", 740, 325, 230, 54),
+      #  "random": TextButton("random", "IA aléatoire", 740, 255, 230, 54),
+        "easy": TextButton("easy", "IA facile", 740, 325, 230, 54),
         "hard": TextButton("hard", "IA difficile", 740, 395, 230, 54),
 
         "start": TextButton("start", "Lancer la partie", 420, 510, 340, 62, GREEN),
@@ -800,7 +304,7 @@ def run_main_menu():
         reseau.connexion = None
 
     mode = "ia"
-    difficulty = "medium"
+    difficulty = "easy"
     info = "Choisissez un mode et lancez la partie."
     clock = pygame.time.Clock()
     connection_thread = None
@@ -845,8 +349,8 @@ def run_main_menu():
                     info = "Mode contre l'IA sélectionné."
                 elif buttons["easy"].clicked(pos):
                     difficulty = "easy"
-                elif buttons["medium"].clicked(pos):
-                    difficulty = "medium"
+               # elif buttons["random"].clicked(pos):
+                  #  difficulty = "random"
                 elif buttons["hard"].clicked(pos):
                     difficulty = "hard"
 
