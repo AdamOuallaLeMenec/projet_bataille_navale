@@ -12,8 +12,8 @@ class ResultatDeplacement(Enum):
 
 
 class Plateau:
-    NB_LIGNES = 26
-    NB_COLONNES = 50
+    NB_LIGNES = 10
+    NB_COLONNES = 10
 
     def __init__(self, x_loc=55, y_loc=100, grid_size=402, cell_width=20):
         self.x_loc = x_loc
@@ -124,3 +124,5 @@ class Plateau:
 
     def tousLesBateauxCoules(self) -> bool:
         return all(b.estCoule() for b in self.bateaux) if self.bateaux else False
+    
+    def aUnPorteAvionVivant(self) -> bool: return any(b.nom == "Porte-avion" and not b.estCoule() for b in self.bateaux)
