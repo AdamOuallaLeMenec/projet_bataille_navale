@@ -31,13 +31,19 @@ SOUND_ENABLED = True
 MUSIC_ENABLED = True
 VOLUME_LEVEL = 0.4
 
-WINDOW_W = 1180
-WINDOW_H = 700
-GRID_Y = 160
-PLAYER_GRID_X = 55
-ENEMY_GRID_X = 725
-GRID_SIZE = 402
-CELL_SIZE = 40
+NB_LIGNES    = 26
+NB_COLONNES  = 50
+CELL_SIZE    = 16
+GRID_W       = NB_COLONNES * CELL_SIZE
+GRID_H       = NB_LIGNES   * CELL_SIZE 
+
+LABEL_MARGIN = 22
+
+WINDOW_W     = 1920
+WINDOW_H     = 720
+GRID_Y       = LABEL_MARGIN + 90
+PLAYER_GRID_X = LABEL_MARGIN + 20
+ENEMY_GRID_X  = PLAYER_GRID_X + GRID_W + 80
 
 SHIPS = {
     "Porte-avion": [5, "Sprites/Battleship5.png"],
@@ -107,13 +113,14 @@ def load_font(relative: str, size: int):
         return pygame.font.SysFont(None, size)
 
 
-title_font = load_font("Fonts/INVASION2000.TTF", 44)
+title_font      = load_font("Fonts/INVASION2000.TTF", 44)
 menu_title_font = load_font("Fonts/INVASION2000.TTF", 58)
-header_font = load_font("Fonts/ARCADECLASSIC.TTF", 30)
-body_font = pygame.font.SysFont(None, 31)
-small_font = pygame.font.SysFont(None, 26)
-button_font = pygame.font.SysFont(None, 28)
-menu_font = pygame.font.SysFont(None, 40)
+header_font     = load_font("Fonts/ARCADECLASSIC.TTF", 22)
+body_font       = pygame.font.SysFont(None, 26)
+small_font      = pygame.font.SysFont(None, 20)
+button_font     = pygame.font.SysFont(None, 24)
+menu_font       = pygame.font.SysFont(None, 36)
+label_font      = pygame.font.SysFont(None, 14)
 
 
 class Case:
@@ -217,19 +224,18 @@ class Bateau(pygame.sprite.Sprite):
 
 
 class Plateau:
-    NB_LIGNES = 10
-    NB_COLONNES = 10
+    NB_LIGNES = 26
+    NB_COLONNES = 50
 
     def __init__(self, x_loc=PLAYER_GRID_X, y_loc=GRID_Y):
         self.x_loc = x_loc
         self.y_loc = y_loc
-        self.grid_size = GRID_SIZE
         self.cell_width = CELL_SIZE
-        self.rect = pygame.Rect(x_loc, y_loc, GRID_SIZE, GRID_SIZE)
-        self.surface = pygame.Surface((GRID_SIZE, GRID_SIZE))
+        self.rect = pygame.Rect(x_loc, y_loc, GRID_W, GRID_H)
+        self.surface = pygame.Surface((GRID_W, GRID_H))
         self.casesImportantes: list[Case] = []
         self.bateaux: list[Bateau] = []
-        self.cells: list[Case] = []
+        self.cells:   list[Case] = []
         self.initialiserGrille()
 
     def initialiserGrille(self) -> None:
@@ -244,9 +250,12 @@ class Plateau:
     def draw_grid(self):
         self.surface.fill(BLUE)
         for i in range(self.NB_COLONNES + 1):
-            offset = i * self.cell_width
-            pygame.draw.line(self.surface, BLACK, (offset, 0), (offset, self.grid_size), 4)
-            pygame.draw.line(self.surface, BLACK, (0, offset), (self.grid_size, offset), 4)
+            x = i * self.cell_width
+            pygame.draw.line(self.surface, BLACK, (x, 0), (x, GRID_H), 1)
+        for i in range(self.NB_LIGNES + 1):
+            y = i * self.cell_width
+            pygame.draw.line(self.surface, BLACK, (0, y), (GRID_W, y), 1)
+
 
     def estDansGrille(self, ligne: int, colonne: int) -> bool:
         return 0 <= ligne < self.NB_LIGNES and 0 <= colonne < self.NB_COLONNES
@@ -410,7 +419,7 @@ class JoueurVirtuel(Joueur):
         self.available_cells = self._populate_available_cells()
 
     def _populate_available_cells(self):
-        return [cell for cell in itertools.product(range(10), range(10))]
+        return list(itertools.product(range(NB_LIGNES), range(NB_COLONNES)))
 
     def prendreDecision(self, ennemi: Joueur) -> ActionTour:
         return ActionTour.Tirer
@@ -436,17 +445,17 @@ class JoueurVirtuel(Joueur):
         return random.choice(list(DirectionDeplacement))
 
     def randomise_ships(self):
-        available_cells = [cell for cell in itertools.product(range(10), range(10))]
+        available_cells = [cell for cell in itertools.product(range(NB_LIGNES), range(NB_COLONNES))]
         for ship in self.plateau.bateaux:
             while True:
                 alignement = random.choice([Alignement.Horizontal, Alignement.Vertical])
                 ship.orienter(alignement)
                 if alignement == Alignement.Horizontal:
-                    row = random.randint(0, 9)
-                    col = random.randint(0, 10 - ship.taille)
+                    row = random.randint(0, NB_LIGNES - 1)
+                    col = random.randint(0, NB_COLONNES - ship.taille)
                 else:
-                    row = random.randint(0, 10 - ship.taille)
-                    col = random.randint(0, 9)
+                    row = random.randint(0, NB_LIGNES - ship.taille)
+                    col = random.randint(0, NB_COLONNES - 1)
                 coords = []
                 for i in range(ship.taille):
                     r = row + (0 if alignement == Alignement.Horizontal else i)
@@ -615,16 +624,37 @@ def draw_lines():
     pygame.draw.line(window_surface, DARK_GREY, (10, 10), (10, 690), 3)
     pygame.draw.line(window_surface, DARK_GREY, (10, 600), (1170, 600), 3)
 
+def draw_grid_labels(plateau: Plateau):
+    """
+    Affiche :
+      - les lettres A–Z sur l'axe vertical (à gauche de la grille)
+      - les numéros 1–50 sur l'axe horizontal (au-dessus de la grille)
+    """
+    cw = plateau.cell_width
+
+    for ligne in range(plateau.NB_LIGNES):
+        lettre = chr(ord('A') + ligne)
+        surf   = label_font.render(lettre, True, BLACK)
+        x = plateau.x_loc - surf.get_width() - 3
+        y = plateau.y_loc + ligne * cw + cw // 2 - surf.get_height() // 2
+        window_surface.blit(surf, (x, y))
+
+    for col in range(plateau.NB_COLONNES):
+        nombre = str(col + 1)
+        surf   = label_font.render(nombre, True, BLACK)
+        x = plateau.x_loc + col * cw + cw // 2 - surf.get_width() // 2
+        y = plateau.y_loc - surf.get_height() - 2
+        window_surface.blit(surf, (x, y))
 
 def display_headers(turn_mode: ActionTour, alignement: Alignement):
-    draw_centered_text("Bataille Navale", title_font, 42)
+    draw_centered_text("Bataille Navale", title_font, 40)
     player_text = header_font.render("GRILLE JOUEUR", True, BLACK)
     enemy_text = header_font.render("GRILLE ENNEMIE", True, BLACK)
     mode_text = body_font.render(f"Mode actuel : {'TIR' if turn_mode == ActionTour.Tirer else 'DEPLACEMENT'}", True,
                                  BLACK)
     axis_text = small_font.render(f"Sens de deplacement : {alignement.value}", True, BLACK)
-    window_surface.blit(player_text, player_text.get_rect(center=(255, 132)))
-    window_surface.blit(enemy_text, enemy_text.get_rect(center=(925, 132)))
+    window_surface.blit(player_text, player_text.get_rect(center=(480, 140)))
+    window_surface.blit(enemy_text, enemy_text.get_rect(center=(1440, 140)))
     window_surface.blit(mode_text, mode_text.get_rect(center=(WINDOW_W // 2, 85)))
     window_surface.blit(axis_text, axis_text.get_rect(center=(WINDOW_W // 2, 115)))
 
