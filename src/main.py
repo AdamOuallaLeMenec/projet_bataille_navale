@@ -45,7 +45,6 @@ GRID_Y       = LABEL_MARGIN + 90
 PLAYER_GRID_X = LABEL_MARGIN + 20
 ENEMY_GRID_X  = PLAYER_GRID_X + GRID_W + 80
 
-
 SHIPS = {
     "Porte-avion": [5, "Sprites/Battleship5.png"],
     "Cuirasse": [4, "Sprites/Cruiser4.png"],
@@ -420,7 +419,7 @@ class JoueurVirtuel(Joueur):
         self.available_cells = self._populate_available_cells()
 
     def _populate_available_cells(self):
-        return [cell for cell in itertools.product(range(10), range(10))]
+        return list(itertools.product(range(NB_LIGNES), range(NB_COLONNES)))
 
     def prendreDecision(self, ennemi: Joueur) -> ActionTour:
         return ActionTour.Tirer
@@ -625,6 +624,29 @@ def draw_lines():
     pygame.draw.line(window_surface, DARK_GREY, (10, 10), (10, 690), 3)
     pygame.draw.line(window_surface, DARK_GREY, (10, 600), (1170, 600), 3)
 
+def draw_grid_labels(plateau: Plateau):
+    """
+    Affiche :
+      - les lettres A–Z sur l'axe vertical (à gauche de la grille)
+      - les numéros 1–50 sur l'axe horizontal (au-dessus de la grille)
+    """
+    cw = plateau.cell_width
+
+    # --- Lettres A-Z (lignes) ---
+    for ligne in range(plateau.NB_LIGNES):
+        lettre = chr(ord('A') + ligne)
+        surf   = label_font.render(lettre, True, BLACK)
+        x = plateau.x_loc - surf.get_width() - 3
+        y = plateau.y_loc + ligne * cw + cw // 2 - surf.get_height() // 2
+        window_surface.blit(surf, (x, y))
+
+    # --- Numéros 1-50 (colonnes) ---
+    for col in range(plateau.NB_COLONNES):
+        nombre = str(col + 1)
+        surf   = label_font.render(nombre, True, BLACK)
+        x = plateau.x_loc + col * cw + cw // 2 - surf.get_width() // 2
+        y = plateau.y_loc - surf.get_height() - 2
+        window_surface.blit(surf, (x, y))
 
 def display_headers(turn_mode: ActionTour, alignement: Alignement):
     draw_centered_text("Bataille Navale", title_font, 42)
