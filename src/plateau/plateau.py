@@ -174,10 +174,10 @@ class Plateau:
         return ResultatDeplacement.DEPLACE
 
     def aUnPorteAvionVivant(self) -> bool:
-        return any(b.nom == "Porte-avion" and not b.estCoule() for b in self.bateaux)
+        return any(b.nom.startswith("Porte-avion") and not b.estCoule() for b in self.bateaux)
 
     def compterNaviresVivantsHorsPatrouilleurs(self) -> int:
-        return sum(1 for b in self.bateaux if b.nom != "Patrouilleur" and not b.estCoule())
+        return sum(1 for b in self.bateaux if not b.nom.startswith("Patrouilleur") and not b.estCoule())
 
     def tousLesBateauxCoules(self) -> bool:
         return all(b.estCoule() for b in self.bateaux) if self.bateaux else False

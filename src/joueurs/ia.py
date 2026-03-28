@@ -50,7 +50,13 @@ class JoueurVirtuel(Joueur):
         available_cells = [cell for cell in itertools.product(range(nb_lignes), range(nb_colonnes))]
 
         for ship in self.plateau.bateaux:
+            attempts = 0
+            max_attempts = 3000
             while True:
+                attempts += 1
+                if attempts > max_attempts:
+                    raise RuntimeError(f"Placement IA impossible pour {ship.nom} après {max_attempts} essais")
+
                 alignement = random.choice([Alignement.Horizontal, Alignement.Vertical])
                 ship.orienter(alignement)
 
