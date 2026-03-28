@@ -1,4 +1,5 @@
 from joueurs.joueur import Joueur
+from plateau.case import ResultatTir
 
 
 class Partie:
@@ -10,22 +11,44 @@ class Partie:
         self.Vainqueur = None
 
     def initialiser(self):
-        self.ToursResatants = self.calculerToursInitials(self.joueur1)
+        self.joueurCourant = self.joueur1
+        self.demarrerTour()
 
     def demarrer(self):
         self.initialiser()
 
     def demarrerTour(self):
-        pass
+        self.ToursResatants = max(1, self.calculerToursInitials(self.joueurCourant))
 
-    def jouerTour(self):
-        pass
+    def jouerTour(self, resultat_tir: ResultatTir | None = None) -> bool:
+        """Consomme une action et retourne True si le même joueur continue."""
+        if self.ToursResatants <= 0:
+            self.demarrerTour()
+
+        self.ToursResatants -= 1
+
+        # Variante demandée: toucher ou couler accorde un tour supplémentaire.
+        if resultat_tir in (ResultatTir.TOUCHE, ResultatTir.COULE):
+            self.accorderTourSupplementaire()
+
+        if self.estTerminee():
+            self.determinerVainqueur()
+            return False
+
+        if self.ToursResatants > 0:
+            return True
+
+        self.passerAuJoueurSuivant()
+        self.demarrerTour()
+        return False
 
     def calculerToursInitials(self, j: Joueur) -> int:
         return 1 + self.calculerBonusFlotte(j)
 
     def calculerBonusFlotte(self, j: Joueur) -> int:
-        return 1 if j.getPlateau().aUnPorteAvionVivant() else 0
+        if not j.getPlateau().aUnPorteAvionVivant():
+            return 0
+        return j.getPlateau().compterNaviresVivantsHorsPatrouilleurs()
 
     def accorderTourSupplementaire(self) -> None:
         self.ToursResatants += 1
