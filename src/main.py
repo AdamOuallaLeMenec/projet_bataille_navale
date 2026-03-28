@@ -37,13 +37,17 @@ SOUND_ENABLED = True
 MUSIC_ENABLED = True
 VOLUME_LEVEL = 0.4
 
-WINDOW_W = 1180
-WINDOW_H = 700
-GRID_Y = 160
-PLAYER_GRID_X = 55
-ENEMY_GRID_X = 725
-GRID_SIZE = 402
-CELL_SIZE = 40
+WINDOW_W = 1920
+WINDOW_H = 720
+LABEL_MARGIN = 22
+NB_LIGNES = 26
+NB_COLONNES = 50
+CELL_SIZE = 16
+GRID_W = NB_COLONNES * CELL_SIZE
+GRID_H = NB_LIGNES * CELL_SIZE
+GRID_Y = LABEL_MARGIN + 90
+PLAYER_GRID_X = LABEL_MARGIN + 20
+ENEMY_GRID_X = PLAYER_GRID_X + GRID_W + 80
 
 SHIPS = {
     "Porte-avion": [5, "Sprites/Battleship5.png"],
@@ -77,11 +81,12 @@ def load_font(relative: str, size: int):
 
 title_font = load_font("Fonts/INVASION2000.TTF", 44)
 menu_title_font = load_font("Fonts/INVASION2000.TTF", 58)
-header_font = load_font("Fonts/ARCADECLASSIC.TTF", 30)
-body_font = pygame.font.SysFont(None, 31)
-small_font = pygame.font.SysFont(None, 26)
-button_font = pygame.font.SysFont(None, 28)
-menu_font = pygame.font.SysFont(None, 40)
+header_font = load_font("Fonts/ARCADECLASSIC.TTF", 22)
+body_font = pygame.font.SysFont(None, 26)
+small_font = pygame.font.SysFont(None, 20)
+button_font = pygame.font.SysFont(None, 24)
+menu_font = pygame.font.SysFont(None, 36)
+label_font = pygame.font.SysFont(None, 14)
 
 
 
@@ -146,14 +151,14 @@ def draw_lines():
 
 
 def display_headers(turn_mode: ActionTour, alignement: Alignement):
-    draw_centered_text("Bataille Navale", title_font, 42)
+    draw_centered_text("Bataille Navale", title_font, 40)
     player_text = header_font.render("GRILLE JOUEUR", True, BLACK)
     enemy_text = header_font.render("GRILLE ENNEMIE", True, BLACK)
     mode_text = body_font.render(f"Mode actuel : {'TIR' if turn_mode == ActionTour.Tirer else 'DEPLACEMENT'}", True,
                                  BLACK)
     axis_text = small_font.render(f"Sens de deplacement : {alignement.value}", True, BLACK)
-    window_surface.blit(player_text, player_text.get_rect(center=(255, 132)))
-    window_surface.blit(enemy_text, enemy_text.get_rect(center=(925, 132)))
+    window_surface.blit(player_text, player_text.get_rect(center=(480, 140)))
+    window_surface.blit(enemy_text, enemy_text.get_rect(center=(1440, 140)))
     window_surface.blit(mode_text, mode_text.get_rect(center=(WINDOW_W // 2, 85)))
     window_surface.blit(axis_text, axis_text.get_rect(center=(WINDOW_W // 2, 115)))
 

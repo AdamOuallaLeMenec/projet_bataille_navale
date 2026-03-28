@@ -1,6 +1,7 @@
 from __future__ import annotations
 from enum import Enum
 from plateau.plateau import Plateau
+from plateau.plateau import ResultatDeplacement
 from plateau.case import Case, ResultatTir
 from navires.bateau import Bateau, DirectionDeplacement
 
@@ -33,7 +34,7 @@ class Joueur:
     def tirer(self, ennemi: "Joueur", cible: Case) -> ResultatTir:
         return ennemi.getPlateau().tirer(cible)
 
-    def deplacer(self, bateau: Bateau, direction: DirectionDeplacement):
+    def deplacer(self, bateau: Bateau, direction: DirectionDeplacement) -> ResultatDeplacement:
         return self.plateau.deplacerBateau(bateau, direction)
 
     def placerFlotte(self) -> None:
