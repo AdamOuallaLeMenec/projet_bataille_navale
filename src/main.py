@@ -31,13 +31,20 @@ SOUND_ENABLED = True
 MUSIC_ENABLED = True
 VOLUME_LEVEL = 0.4
 
-WINDOW_W = 1180
-WINDOW_H = 700
-GRID_Y = 160
-PLAYER_GRID_X = 55
-ENEMY_GRID_X = 725
-GRID_SIZE = 402
-CELL_SIZE = 40
+NB_LIGNES    = 26
+NB_COLONNES  = 50
+CELL_SIZE    = 16
+GRID_W       = NB_COLONNES * CELL_SIZE
+GRID_H       = NB_LIGNES   * CELL_SIZE 
+
+LABEL_MARGIN = 22
+
+WINDOW_W     = 1920
+WINDOW_H     = 720
+GRID_Y       = LABEL_MARGIN + 90
+PLAYER_GRID_X = LABEL_MARGIN + 20
+ENEMY_GRID_X  = PLAYER_GRID_X + GRID_W + 80
+
 
 SHIPS = {
     "Porte-avion": [5, "Sprites/Battleship5.png"],
@@ -107,13 +114,14 @@ def load_font(relative: str, size: int):
         return pygame.font.SysFont(None, size)
 
 
-title_font = load_font("Fonts/INVASION2000.TTF", 44)
+title_font      = load_font("Fonts/INVASION2000.TTF", 44)
 menu_title_font = load_font("Fonts/INVASION2000.TTF", 58)
-header_font = load_font("Fonts/ARCADECLASSIC.TTF", 30)
-body_font = pygame.font.SysFont(None, 31)
-small_font = pygame.font.SysFont(None, 26)
-button_font = pygame.font.SysFont(None, 28)
-menu_font = pygame.font.SysFont(None, 40)
+header_font     = load_font("Fonts/ARCADECLASSIC.TTF", 22)
+body_font       = pygame.font.SysFont(None, 26)
+small_font      = pygame.font.SysFont(None, 20)
+button_font     = pygame.font.SysFont(None, 24)
+menu_font       = pygame.font.SysFont(None, 36)
+label_font      = pygame.font.SysFont(None, 14)
 
 
 class Case:
@@ -217,19 +225,18 @@ class Bateau(pygame.sprite.Sprite):
 
 
 class Plateau:
-    NB_LIGNES = 10
-    NB_COLONNES = 10
+    NB_LIGNES = 26
+    NB_COLONNES = 50
 
     def __init__(self, x_loc=PLAYER_GRID_X, y_loc=GRID_Y):
         self.x_loc = x_loc
         self.y_loc = y_loc
-        self.grid_size = GRID_SIZE
         self.cell_width = CELL_SIZE
-        self.rect = pygame.Rect(x_loc, y_loc, GRID_SIZE, GRID_SIZE)
-        self.surface = pygame.Surface((GRID_SIZE, GRID_SIZE))
+        self.rect = pygame.Rect(x_loc, y_loc, GRID_W, GRID_H)
+        self.surface = pygame.Surface((GRID_W, GRID_H))
         self.casesImportantes: list[Case] = []
         self.bateaux: list[Bateau] = []
-        self.cells: list[Case] = []
+        self.cells:   list[Case] = []
         self.initialiserGrille()
 
     def initialiserGrille(self) -> None:
@@ -244,9 +251,12 @@ class Plateau:
     def draw_grid(self):
         self.surface.fill(BLUE)
         for i in range(self.NB_COLONNES + 1):
-            offset = i * self.cell_width
-            pygame.draw.line(self.surface, BLACK, (offset, 0), (offset, self.grid_size), 4)
-            pygame.draw.line(self.surface, BLACK, (0, offset), (self.grid_size, offset), 4)
+            x = i * self.cell_width
+            pygame.draw.line(self.surface, BLACK, (x, 0), (x, GRID_H), 1)
+        for i in range(self.NB_LIGNES + 1):
+            y = i * self.cell_width
+            pygame.draw.line(self.surface, BLACK, (0, y), (GRID_W, y), 1)
+
 
     def estDansGrille(self, ligne: int, colonne: int) -> bool:
         return 0 <= ligne < self.NB_LIGNES and 0 <= colonne < self.NB_COLONNES
