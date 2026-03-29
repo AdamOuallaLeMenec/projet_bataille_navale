@@ -272,8 +272,7 @@ def setup_menu_buttons():
         "join": TextButton("join", "Rejoindre une partie", 110, 305, 320, 58),
         "ia": TextButton("ia", "Jouer contre l'IA", 110, 380, 320, 58),
 
-        "easy": TextButton("easy", "IA facile", 740, 255, 230, 54),
-        "medium": TextButton("medium", "IA moyenne", 740, 325, 230, 54),
+        "easy": TextButton("easy", "IA facile", 740, 325, 230, 54),
         "hard": TextButton("hard", "IA difficile", 740, 395, 230, 54),
 
         "start": TextButton("start", "Lancer la partie", 420, 510, 340, 62, GREEN),
@@ -294,7 +293,7 @@ def run_main_menu():
         reseau.connexion = None
 
     mode = "ia"
-    difficulty = "medium"
+    difficulty = "easy"
     info = "Choisissez un mode et lancez la partie."
     clock = pygame.time.Clock()
     connection_thread = None
@@ -339,8 +338,6 @@ def run_main_menu():
                     info = "Mode contre l'IA sélectionné."
                 elif buttons["easy"].clicked(pos):
                     difficulty = "easy"
-                elif buttons["medium"].clicked(pos):
-                    difficulty = "medium"
                 elif buttons["hard"].clicked(pos):
                     difficulty = "hard"
 
