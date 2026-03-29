@@ -39,15 +39,15 @@ VOLUME_LEVEL = 0.4
 
 WINDOW_W = 1920
 WINDOW_H = 720
-LABEL_MARGIN = 22
 NB_LIGNES = 26
-NB_COLONNES = 50
+NB_COLONNES = 40
 CELL_SIZE = 16
 GRID_W = NB_COLONNES * CELL_SIZE
 GRID_H = NB_LIGNES * CELL_SIZE
-GRID_Y = LABEL_MARGIN + 90
-PLAYER_GRID_X = LABEL_MARGIN + 20
-ENEMY_GRID_X = PLAYER_GRID_X + GRID_W + 80
+GRID_Y = 160
+GRID_GAP = 120
+PLAYER_GRID_X = (WINDOW_W - (GRID_W * 2 + GRID_GAP)) // 2
+ENEMY_GRID_X = PLAYER_GRID_X + GRID_W + GRID_GAP
 
 SHIPS = {
     "Porte-avion": [5, "Sprites/Battleship5.png"],
@@ -139,7 +139,9 @@ label_font = pygame.font.SysFont(None, 14)
 class CellHit(pygame.sprite.Sprite):
     def __init__(self, image: Path, rect_center):
         super().__init__()
-        self.image = pygame.image.load(image).convert_alpha()
+        raw = pygame.image.load(image).convert_alpha()
+        marker_size = max(CELL_SIZE - 2, 8)
+        self.image = pygame.transform.smoothscale(raw, (marker_size, marker_size))
         self.rect = self.image.get_rect(center=(rect_center[0] + 1, rect_center[1] + 1))
 
 
@@ -187,11 +189,16 @@ def draw_centered_text(text, font, y, color=BLACK):
 
 
 def draw_lines():
-    pygame.draw.line(window_surface, DARK_GREY, (10, 10), (1170, 10), 3)
-    pygame.draw.line(window_surface, DARK_GREY, (1170, 10), (1170, 690), 3)
-    pygame.draw.line(window_surface, DARK_GREY, (1170, 690), (10, 690), 3)
-    pygame.draw.line(window_surface, DARK_GREY, (10, 10), (10, 690), 3)
-    pygame.draw.line(window_surface, DARK_GREY, (10, 600), (1170, 600), 3)
+    left = 20
+    top = 12
+    right = WINDOW_W - 20
+    bottom = WINDOW_H - 12
+    action_sep_y = WINDOW_H - 110
+    pygame.draw.line(window_surface, DARK_GREY, (left, top), (right, top), 3)
+    pygame.draw.line(window_surface, DARK_GREY, (right, top), (right, bottom), 3)
+    pygame.draw.line(window_surface, DARK_GREY, (right, bottom), (left, bottom), 3)
+    pygame.draw.line(window_surface, DARK_GREY, (left, top), (left, bottom), 3)
+    pygame.draw.line(window_surface, DARK_GREY, (left, action_sep_y), (right, action_sep_y), 3)
 
 
 def display_headers(turn_mode: ActionTour, alignement: Alignement):
@@ -201,16 +208,19 @@ def display_headers(turn_mode: ActionTour, alignement: Alignement):
     mode_text = body_font.render(f"Mode actuel : {'TIR' if turn_mode == ActionTour.Tirer else 'DEPLACEMENT'}", True,
                                  BLACK)
     axis_text = small_font.render(f"Sens de deplacement : {alignement.value}", True, BLACK)
-    window_surface.blit(player_text, player_text.get_rect(center=(480, 140)))
-    window_surface.blit(enemy_text, enemy_text.get_rect(center=(1440, 140)))
+    player_center_x = PLAYER_GRID_X + GRID_W // 2
+    enemy_center_x = ENEMY_GRID_X + GRID_W // 2
+    window_surface.blit(player_text, player_text.get_rect(center=(player_center_x, 132)))
+    window_surface.blit(enemy_text, enemy_text.get_rect(center=(enemy_center_x, 132)))
     window_surface.blit(mode_text, mode_text.get_rect(center=(WINDOW_W // 2, 85)))
     window_surface.blit(axis_text, axis_text.get_rect(center=(WINDOW_W // 2, 115)))
 
 
 def display_instruction(text, color=WHITE):
-    panel = pygame.Rect(25, 612, 1130, 65)
+    panel_width = WINDOW_W - 80
+    panel = pygame.Rect((WINDOW_W - panel_width) // 2, WINDOW_H - 72, panel_width, 48)
     pygame.draw.rect(window_surface, DARK_GREY, panel, border_radius=8)
-    label = body_font.render(text, True, color)
+    label = small_font.render(text, True, color)
     window_surface.blit(label, label.get_rect(center=panel.center))
 
 
@@ -220,14 +230,15 @@ def create_fleet_sprites(fleet_spec: list[tuple[str, int, str]] | None = None) -
         fleet_spec = build_fleet_spec(default_counts)
 
     group = pygame.sprite.Group()
-    x_positions = [460, 640]
-    y_start = 185
+    center_lane = (PLAYER_GRID_X + GRID_W + ENEMY_GRID_X) // 2
+    x_positions = [center_lane - 70, center_lane + 70]
+    y_start = GRID_Y + 20
     y_step = 34
 
     for idx, (ship_name, length, rel_path) in enumerate(fleet_spec):
         ship_x = x_positions[idx % len(x_positions)]
         ship_y = y_start + (idx // len(x_positions)) * y_step
-        group.add(Bateau(ship_name, length, asset_path(rel_path), ship_x, ship_y))
+        group.add(Bateau(ship_name, length, asset_path(rel_path), ship_x, ship_y, CELL_SIZE))
     return group
 
 
@@ -238,7 +249,7 @@ def create_enemy_fleet(fleet_spec: list[tuple[str, int, str]] | None = None) -> 
 
     lst = []
     for ship_name, length, rel_path in fleet_spec:
-        lst.append(Bateau(ship_name, length, asset_path(rel_path)))
+        lst.append(Bateau(ship_name, length, asset_path(rel_path), cell_size=CELL_SIZE))
     return lst
 
 
@@ -339,28 +350,38 @@ def play_sound(effect_type):
 
 
 def setup_buttons():
+    center_x = WINDOW_W // 2
+    row_y = WINDOW_H - 145
+    gap = 14
+    tir_w = 100
+    move_w = 170
+    axis_w = 90
+    row_total_w = tir_w + gap + move_w + gap + axis_w
+    row_start_x = center_x - row_total_w // 2
+
     return {
         "menu": TextButton("menu", "MENU", 22, 22, 100, 42, MENU_BLUE),
-        "rotate": TextButton("rotate", "Rotation", 490, 470, 200, 52),
-        "action_tir": TextButton("action_tir", "Tir", 430, 535, 100, 46),
-        "action_move": TextButton("action_move", "Deplacement", 540, 535, 170, 46),
-        "axis": TextButton("axis", "H / V", 720, 535, 90, 46),
-        "lock": TextButton("lock", "Valider", 520, 535, 140, 46),
+        "rotate": TextButton("rotate", "Rotation", center_x - 280, WINDOW_H - 190, 180, 52),
+        "action_tir": TextButton("action_tir", "Tir", row_start_x, row_y, tir_w, 46),
+        "action_move": TextButton("action_move", "Deplacement", row_start_x + tir_w + gap, row_y, move_w, 46),
+        "axis": TextButton("axis", "H / V", row_start_x + tir_w + gap + move_w + gap, row_y, axis_w, 46),
+        "lock": TextButton("lock", "Valider", center_x - 70, WINDOW_H - 145, 140, 46),
     }
 
 
 def setup_menu_buttons():
+    center_x = WINDOW_W // 2
     return {
-        "create": TextButton("create", "Créer une partie", 110, 230, 320, 58),
-        "join": TextButton("join", "Rejoindre une partie", 110, 305, 320, 58),
-        "ia": TextButton("ia", "Jouer contre l'IA", 110, 380, 320, 58),
-        "local2": TextButton("local2", "Jouer à 2 (local)", 110, 455, 320, 58),
+        "create": TextButton("create", "Créer une partie", center_x - 360, 230, 320, 58),
+        "join": TextButton("join", "Rejoindre une partie", center_x - 360, 305, 320, 58),
+        "ia": TextButton("ia", "Jouer contre l'IA", center_x - 360, 380, 320, 58),
+        "local2": TextButton("local2", "Jouer à 2 (local)", center_x - 360, 455, 320, 58),
 
       #  "random": TextButton("random", "IA aléatoire", 740, 255, 230, 54),
-        "easy": TextButton("easy", "IA facile", 740, 325, 230, 54),
-        "hard": TextButton("hard", "IA difficile", 740, 395, 230, 54),
+        "easy": TextButton("easy", "IA facile", center_x + 60, 305, 230, 54),
+        "hard": TextButton("hard", "IA difficile", center_x + 60, 375, 230, 54),
 
-        "start": TextButton("start", "Lancer la partie", 420, 510, 340, 62, GREEN),
+        "start": TextButton("start", "Lancer la partie", center_x - 170, 525, 340, 62, GREEN),
     }
 
 
@@ -467,7 +488,7 @@ def run_main_menu():
 
         audio_logo.draw(window_surface)
 
-        info_panel = pygame.Rect(120, 590, 940, 52)
+        info_panel = pygame.Rect((WINDOW_W - 940) // 2, WINDOW_H - 95, 940, 52)
         pygame.draw.rect(window_surface, DARK_GREY, info_panel, border_radius=8)
         surf = small_font.render(info, True, WHITE)
         window_surface.blit(surf, surf.get_rect(center=info_panel.center))
@@ -673,7 +694,7 @@ def run_local_two_players():
 
     buttons = setup_buttons()
     global current_buttons
-    current_buttons = {k: v for k, v in buttons.items() if k in ["menu", "rotate", "action_tir", "action_move", "axis"]}
+    current_buttons = {k: v for k, v in buttons.items() if k in ["menu", "action_tir", "action_move", "axis"]}
 
     current_player = joueur1
     enemy_player = joueur2
@@ -699,7 +720,7 @@ def run_local_two_players():
                 if current_buttons["menu"].clicked(pos):
                     return
 
-                elif current_buttons["rotate"].clicked(pos):
+                elif "rotate" in current_buttons and current_buttons["rotate"].clicked(pos):
                     if turn_mode == ActionTour.Deplacer and selected_ship_name:
                         ship = get_ship_by_name(ship_groups[current_player], selected_ship_name)
                         if ship:
@@ -1007,7 +1028,7 @@ def main():
         buttons = setup_buttons()
         global current_buttons
         current_buttons = {k: v for k, v in buttons.items() if
-                           k in ["menu", "rotate", "action_tir", "action_move", "axis"]}
+                           k in ["menu", "action_tir", "action_move", "axis"]}
 
         turn_mode = ActionTour.Tirer
         alignement_move = Alignement.Horizontal
@@ -1032,7 +1053,7 @@ def main():
                         playing = False
                         break
 
-                    elif current_buttons["rotate"].clicked(pos):
+                    elif "rotate" in current_buttons and current_buttons["rotate"].clicked(pos):
                         if turn_mode == ActionTour.Deplacer and selected_ship_name:
                             ship = get_ship_by_name(game_ship_group, selected_ship_name)
                             if ship:
