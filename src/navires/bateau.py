@@ -2,7 +2,11 @@ from __future__ import annotations
 import pygame
 from enum import Enum
 from pathlib import Path
+from typing import TYPE_CHECKING
 from plateau.case import Case
+
+if TYPE_CHECKING:
+    from plateau.plateau import Plateau
 
 
 class Alignement(Enum):
@@ -58,7 +62,7 @@ class Bateau(pygame.sprite.Sprite):
         self.image = pygame.transform.rotate(self.original_image, angle)
         self.rect = self.image.get_rect(center=center)
 
-    def calculerCasesApresDeplacement(self, dir: DirectionDeplacement, plateau: "Plateau") -> list[Case] | None:
+    def calculerCasesApresDeplacement(self, dir: DirectionDeplacement, plateau: Plateau) -> list[Case] | None:
         delta_row, delta_col = {
             DirectionDeplacement.NORD: (-1, 0),
             DirectionDeplacement.SUD: (1, 0),

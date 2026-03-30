@@ -52,6 +52,49 @@ SHIPS = {
 }
 
 
+def generate_random_fleet_counts() -> dict[str, int]:
+    counts = {"Porte-avion": random.randint(1, 2)}
+    for ship_name in SHIPS:
+        if ship_name != "Porte-avion":
+            counts[ship_name] = random.randint(0, 2)
+    return counts
+
+
+def fleet_total_cells(counts: dict[str, int]) -> int:
+    total = 0
+    for ship_name, qty in counts.items():
+        total += SHIPS[ship_name][0] * qty
+    return total
+
+
+def generate_balanced_fleet_pair(max_delta: int = 3, max_attempts: int = 600) -> tuple[dict[str, int], dict[str, int]]:
+    best_pair = None
+    best_delta = 10 ** 9
+
+    for _ in range(max_attempts):
+        p1 = generate_random_fleet_counts()
+        p2 = generate_random_fleet_counts()
+        delta = abs(fleet_total_cells(p1) - fleet_total_cells(p2))
+
+        if delta < best_delta:
+            best_delta = delta
+            best_pair = (p1, p2)
+
+        if delta <= max_delta:
+            return p1, p2
+
+    return best_pair if best_pair is not None else (generate_random_fleet_counts(), generate_random_fleet_counts())
+
+
+def build_fleet_spec(counts: dict[str, int]) -> list[tuple[str, int, str]]:
+    fleet_spec = []
+    for ship_name, qty in counts.items():
+        length, rel_path = SHIPS[ship_name]
+        for _ in range(qty):
+            fleet_spec.append((ship_name, length, rel_path))
+    return fleet_spec
+
+
 pygame.init()
 try:
     pygame.mixer.init()
@@ -160,19 +203,21 @@ def display_instruction(text, color=WHITE):
     window_surface.blit(label, label.get_rect(center=panel.center))
 
 
-def create_fleet_sprites() -> pygame.sprite.Group:
+def create_fleet_sprites(fleet_spec: list[tuple[str, int, str]] | None = None) -> pygame.sprite.Group:
     group = pygame.sprite.Group()
     ship_y = 205
     ship_x = 485
-    for ship_name, (length, rel_path) in SHIPS.items():
+    spec = fleet_spec if fleet_spec is not None else [(name, val[0], val[1]) for name, val in SHIPS.items()]
+    for ship_name, length, rel_path in spec:
         group.add(Bateau(ship_name, length, asset_path(rel_path), ship_x, ship_y))
-        ship_y += 46
+        ship_y += 40
     return group
 
 
-def create_enemy_fleet() -> list[Bateau]:
+def create_enemy_fleet(fleet_spec: list[tuple[str, int, str]] | None = None) -> list[Bateau]:
     lst = []
-    for ship_name, (length, rel_path) in SHIPS.items():
+    spec = fleet_spec if fleet_spec is not None else [(name, val[0], val[1]) for name, val in SHIPS.items()]
+    for ship_name, length, rel_path in spec:
         lst.append(Bateau(ship_name, length, asset_path(rel_path)))
     return lst
 
@@ -409,7 +454,7 @@ def lock_in_ships(player: JoueurHumain, ship_group) -> tuple[bool, str]:
         player.plateau.placerBateau(ship, cases)
 
     total_cells = len([c for c in player.plateau.cells if c.bateau is not None])
-    expected = sum(v[0] for v in SHIPS.values())
+    expected = sum(ship.taille for ship in ship_group)
     if total_cells != expected:
         return True, "Tous les navires doivent etre places correctement."
 
@@ -586,8 +631,9 @@ def main():
         partie = Partie(joueur1, joueur2)
         partie.demarrer()
 
-        ship_group = create_fleet_sprites()
-        enemy_ships = create_enemy_fleet()
+        joueur_counts, ennemi_counts = generate_balanced_fleet_pair(max_delta=3)
+        ship_group = create_fleet_sprites(build_fleet_spec(joueur_counts))
+        enemy_ships = create_enemy_fleet(build_fleet_spec(ennemi_counts))
         joueur2.plateau.bateaux = enemy_ships
         joueur2.randomise_ships()
 
