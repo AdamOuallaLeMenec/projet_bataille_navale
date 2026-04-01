@@ -16,7 +16,7 @@ class Plateau:
     NB_LIGNES = 22
     NB_COLONNES = 22
 
-    def __init__(self, x_loc=55, y_loc=160, cell_width=16):
+    def __init__(self, x_loc=55, y_loc=160, cell_width=18):
         self.x_loc = x_loc
         self.y_loc = y_loc
         self.cell_width = cell_width

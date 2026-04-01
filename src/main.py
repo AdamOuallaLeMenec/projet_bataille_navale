@@ -41,7 +41,7 @@ WINDOW_W = 1200
 WINDOW_H = 720
 NB_LIGNES = 22
 NB_COLONNES = 22
-CELL_SIZE = 16
+CELL_SIZE = 18
 GRID_W = NB_COLONNES * CELL_SIZE
 GRID_H = NB_LIGNES * CELL_SIZE
 GRID_Y = 160
@@ -237,7 +237,7 @@ def create_fleet_sprites(fleet_spec: list[tuple[str, int, str]] | None = None) -
     for idx, (ship_name, length, rel_path) in enumerate(fleet_spec):
         ship_x = center_lane - 40
         ship_y = y_start + idx * y_step
-        group.add(Bateau(ship_name, length, asset_path(rel_path), ship_x, ship_y, cell_size=16))
+        group.add(Bateau(ship_name, length, asset_path(rel_path), ship_x, ship_y, cell_size=CELL_SIZE))
     return group
 
 
@@ -248,7 +248,7 @@ def create_enemy_fleet(fleet_spec: list[tuple[str, int, str]] | None = None) -> 
 
     lst = []
     for ship_name, length, rel_path in fleet_spec:
-        lst.append(Bateau(ship_name, length, asset_path(rel_path), cell_size=16))
+        lst.append(Bateau(ship_name, length, asset_path(rel_path), cell_size=CELL_SIZE))
     return lst
 
 
