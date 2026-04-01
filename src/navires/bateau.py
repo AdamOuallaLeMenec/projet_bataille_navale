@@ -22,14 +22,17 @@ class DirectionDeplacement(Enum):
 
 
 class Bateau(pygame.sprite.Sprite):
-    def __init__(self, nom: str, taille: int, image: Path, x=0, y=0, cell_size: int = 40):
+    def __init__(self, nom: str, taille: int, image: Path, x=0, y=0, cell_size: int = 16):
         super().__init__()
         self.nom = nom
         self.taille = taille
         self.pointsDeVie = taille
         self.casesOccupees: list[Case] = []
         self.alignement = Alignement.Horizontal
-        self.original_image = pygame.image.load(image).convert_alpha()
+        raw_image = pygame.image.load(image).convert_alpha()
+        target_w = max(cell_size * taille, 1)
+        target_h = max(cell_size - 2, 1)
+        self.original_image = pygame.transform.smoothscale(raw_image, (target_w, target_h))
         self.image = self.original_image.copy()
         self.rect = self.image.get_rect()
         self.rect.x = x
