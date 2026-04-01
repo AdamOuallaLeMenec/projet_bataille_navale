@@ -201,10 +201,10 @@ def draw_lines():
     pygame.draw.line(window_surface, DARK_GREY, (left, action_sep_y), (right, action_sep_y), 3)
 
 
-def display_headers(turn_mode: ActionTour, alignement: Alignement):
+def display_headers(turn_mode: ActionTour, alignement: Alignement, left_label="GRILLE JOUEUR", right_label="GRILLE ENNEMIE"):
     draw_centered_text("Bataille Navale", title_font, 40)
-    player_text = header_font.render("GRILLE JOUEUR", True, BLACK)
-    enemy_text = header_font.render("GRILLE ENNEMIE", True, BLACK)
+    player_text = header_font.render(left_label, True, BLACK)
+    enemy_text = header_font.render(right_label, True, BLACK)
     mode_text = body_font.render(f"Mode actuel : {'TIR' if turn_mode == ActionTour.Tirer else 'DEPLACEMENT'}", True,
                                  BLACK)
     axis_text = small_font.render(f"Sens de deplacement : {alignement.value}", True, BLACK)
@@ -278,14 +278,14 @@ def fleet_summary_from_group(ship_group) -> str:
 
 
 def refresh_screen(player_plateau, enemy_plateau, ship_list, hit_list, buttons, instruction, turn_mode, alignement,
-                   selected=None):
+                   selected=None, left_label="GRILLE JOUEUR", right_label="GRILLE ENNEMIE", mask_enemy=False):
     window_surface.fill(GREY)
     draw_lines()
     player_plateau.draw_grid(window_surface, font=small_font)
     enemy_plateau.draw_grid(window_surface, font=small_font)
     window_surface.blit(player_plateau.surface, player_plateau.rect)
     window_surface.blit(enemy_plateau.surface, enemy_plateau.rect)
-    display_headers(turn_mode, alignement)
+    display_headers(turn_mode, alignement, left_label, right_label)
 
     for btn_name, btn in buttons.items():
         active = False
@@ -306,6 +306,11 @@ def refresh_screen(player_plateau, enemy_plateau, ship_list, hit_list, buttons, 
     ship_list.draw(window_surface)
     if selected is not None:
         pygame.draw.rect(window_surface, YELLOW, selected.rect.inflate(8, 8), 4, border_radius=6)
+
+    if mask_enemy:
+        overlay = pygame.Surface((enemy_plateau.rect.w, enemy_plateau.rect.h), pygame.SRCALPHA)
+        overlay.fill((15, 15, 15, 120))
+        window_surface.blit(overlay, enemy_plateau.rect.topleft)
 
     display_instruction(instruction)
     pygame.display.update()
@@ -559,7 +564,14 @@ def snap_ship_to_grid(plateau: Plateau, ship: Bateau, probe_pos: tuple[int, int]
     return True
 
 
-def set_up_player_ships(player: JoueurHumain, enemy: Joueur, ship_group, hit_list):
+def set_up_player_ships(
+    player: JoueurHumain,
+    enemy: Joueur,
+    ship_group,
+    hit_list,
+    left_label="GRILLE JOUEUR",
+    right_label="GRILLE ENNEMIE",
+):
     buttons = setup_buttons()
     selected = None
     dragging = False
@@ -615,6 +627,8 @@ def set_up_player_ships(player: JoueurHumain, enemy: Joueur, ship_group, hit_lis
             ActionTour.Tirer,
             Alignement.Horizontal,
             selected,
+            left_label=left_label,
+            right_label=right_label,
         )
         clock.tick(30)
 
@@ -673,15 +687,18 @@ def run_local_two_players():
 
     show_turn_transition(joueur1.nom)
     ship_group_1 = create_fleet_sprites(fleet_spec_1)
-    if not set_up_player_ships(joueur1, joueur2, ship_group_1, hit_list):
+    if not set_up_player_ships(joueur1, joueur2, ship_group_1, hit_list, left_label="JOUEUR 1", right_label="JOUEUR 2"):
         return
     joueur1.plateau.bateaux = list(ship_group_1)
 
     show_turn_transition(joueur2.nom)
     ship_group_2 = create_fleet_sprites(fleet_spec_2)
-    if not set_up_player_ships(joueur2, joueur1, ship_group_2, hit_list):
+    if not set_up_player_ships(joueur2, joueur1, ship_group_2, hit_list, left_label="JOUEUR 1", right_label="JOUEUR 2"):
         return
     joueur2.plateau.bateaux = list(ship_group_2)
+
+    # Confidentialité: après validation de Joueur 2, on masque avant de rendre la main à Joueur 1.
+    show_turn_transition(joueur1.nom)
 
     # Les bonus de tours dépendent de la flotte effectivement placée.
     partie.demarrerTour()
@@ -770,6 +787,9 @@ def run_local_two_players():
                                 instruction,
                                 turn_mode,
                                 alignement_move,
+                                left_label="JOUEUR 1",
+                                right_label="JOUEUR 2",
+                                mask_enemy=True,
                             )
                             pygame.time.wait(1200)
                             show_game_over(f"Victoire de {current_player.nom} !")
@@ -869,13 +889,10 @@ def run_local_two_players():
             turn_mode,
             alignement_move,
             selected_ship,
+            left_label="JOUEUR 1",
+            right_label="JOUEUR 2",
+            mask_enemy=True,
         )
-
-        # Masque visuel de la grille adverse en local (reste cliquable pour tirer).
-        overlay = pygame.Surface((enemy_player.plateau.rect.w, enemy_player.plateau.rect.h), pygame.SRCALPHA)
-        overlay.fill((15, 15, 15, 120))
-        window_surface.blit(overlay, enemy_player.plateau.rect.topleft)
-        pygame.display.update()
         clock.tick(30)
 
 
@@ -1027,7 +1044,7 @@ def main():
         buttons = setup_buttons()
         global current_buttons
         current_buttons = {k: v for k, v in buttons.items() if
-                           k in ["menu", "action_tir", "action_move", "axis"]}
+               k in ["menu", "action_tir", "action_move", "axis"]}
 
         turn_mode = ActionTour.Tirer
         alignement_move = Alignement.Horizontal
