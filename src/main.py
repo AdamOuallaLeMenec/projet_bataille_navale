@@ -237,7 +237,7 @@ def create_fleet_sprites(fleet_spec: list[tuple[str, int, str]] | None = None) -
     for idx, (ship_name, length, rel_path) in enumerate(fleet_spec):
         ship_x = center_lane - 40
         ship_y = y_start + idx * y_step
-        group.add(Bateau(ship_name, length, asset_path(rel_path), ship_x, ship_y, CELL_SIZE))
+        group.add(Bateau(ship_name, length, asset_path(rel_path), ship_x, ship_y))
     return group
 
 
@@ -248,7 +248,7 @@ def create_enemy_fleet(fleet_spec: list[tuple[str, int, str]] | None = None) -> 
 
     lst = []
     for ship_name, length, rel_path in fleet_spec:
-        lst.append(Bateau(ship_name, length, asset_path(rel_path), cell_size=CELL_SIZE))
+        lst.append(Bateau(ship_name, length, asset_path(rel_path)))
     return lst
 
 
