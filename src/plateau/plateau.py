@@ -109,6 +109,10 @@ class Plateau:
             case = self.getCase(row, col)
             if case is None:
                 return None
+            # On interdit de placer ou de deplacer un navire sur une case deja visee
+            # (touchee ou ratee). Cela evite de "reutiliser" une case revelee.
+            if case.is_clicked and case.bateau != b:
+                return None
             if case.bateau is not None and case.bateau != b:
                 return None
             cases.append(case)
