@@ -45,7 +45,7 @@ CELL_SIZE = 18
 GRID_W = NB_COLONNES * CELL_SIZE
 GRID_H = NB_LIGNES * CELL_SIZE
 GRID_Y = 160
-GRID_GAP = 120
+GRID_GAP = 220
 PLAYER_GRID_X = (WINDOW_W - (GRID_W * 2 + GRID_GAP)) // 2
 ENEMY_GRID_X = PLAYER_GRID_X + GRID_W + GRID_GAP
 
@@ -76,20 +76,13 @@ def fleet_total_cells(fleet_counts: dict[str, int]) -> int:
 
 
 def generate_balanced_fleet_pair(max_delta=3, max_attempts=600) -> tuple[dict[str, int], dict[str, int]]:
-    best_pair = None
-    best_delta = 10 ** 9
-
-    for _ in range(max_attempts):
-        fleet_a = generate_random_fleet_counts()
-        fleet_b = generate_random_fleet_counts()
-        delta = abs(fleet_total_cells(fleet_a) - fleet_total_cells(fleet_b))
-        if delta < best_delta:
-            best_delta = delta
-            best_pair = (fleet_a, fleet_b)
-        if delta <= max_delta:
-            return fleet_a, fleet_b
-
-    return best_pair
+    """
+    Chaque joueur reçoit exactement la meme composition de flotte.
+    La flotte reste aleatoire, mais le nombre de navires est strictement
+    equilibre entre les deux camps.
+    """
+    flotte = generate_random_fleet_counts()
+    return dict(flotte), dict(flotte)
 
 
 def build_fleet_spec(fleet_counts: dict[str, int]) -> list[tuple[str, int, str]]:
@@ -142,7 +135,7 @@ class CellHit(pygame.sprite.Sprite):
         raw = pygame.image.load(image).convert_alpha()
         marker_size = max(CELL_SIZE - 2, 8)
         self.image = pygame.transform.smoothscale(raw, (marker_size, marker_size))
-        self.rect = self.image.get_rect(center=(rect_center[0] + 1, rect_center[1] + 1))
+        self.rect = self.image.get_rect(center=rect_center)
 
 
 class TextButton:
@@ -205,15 +198,16 @@ def display_headers(turn_mode: ActionTour, alignement: Alignement, left_label="G
     draw_centered_text("Bataille Navale", title_font, 40)
     player_text = header_font.render(left_label, True, BLACK)
     enemy_text = header_font.render(right_label, True, BLACK)
-    mode_text = body_font.render(f"Mode actuel : {'TIR' if turn_mode == ActionTour.Tirer else 'DEPLACEMENT'}", True,
-                                 BLACK)
-    axis_text = small_font.render(f"Sens de deplacement : {alignement.value}", True, BLACK)
+    mode_text = body_font.render(f"Mode actuel : {'TIR' if turn_mode == ActionTour.Tirer else 'DEPLACEMENT'}", True, BLACK)
     player_center_x = PLAYER_GRID_X + GRID_W // 2
     enemy_center_x = ENEMY_GRID_X + GRID_W // 2
     window_surface.blit(player_text, player_text.get_rect(center=(player_center_x, 132)))
     window_surface.blit(enemy_text, enemy_text.get_rect(center=(enemy_center_x, 132)))
-    window_surface.blit(mode_text, mode_text.get_rect(center=(WINDOW_W // 2, 85)))
-    window_surface.blit(axis_text, axis_text.get_rect(center=(WINDOW_W // 2, 115)))
+    window_surface.blit(mode_text, mode_text.get_rect(center=(WINDOW_W // 2, 100)))
+
+
+def display_grid_footers(player_remaining: int | None = None, enemy_remaining: int | None = None):
+    return
 
 
 def display_instruction(text, color=WHITE):
@@ -277,6 +271,10 @@ def fleet_summary_from_group(ship_group) -> str:
     return ", ".join(parts) if parts else "Aucun navire"
 
 
+def count_alive_ships(plateau: Plateau) -> int:
+    return sum(1 for b in plateau.bateaux if not b.estCoule())
+
+
 def refresh_screen(player_plateau, enemy_plateau, ship_list, hit_list, buttons, instruction, turn_mode, alignement,
                    selected=None, left_label="GRILLE JOUEUR", right_label="GRILLE ENNEMIE", mask_enemy=False):
     window_surface.fill(GREY)
@@ -293,7 +291,7 @@ def refresh_screen(player_plateau, enemy_plateau, ship_list, hit_list, buttons, 
             active = True
         if btn_name == "action_move" and turn_mode == ActionTour.Deplacer:
             active = True
-        if btn_name == "axis" and alignement == Alignement.Vertical:
+        if btn_name in {"north", "south", "east", "west"} and turn_mode == ActionTour.Deplacer:
             active = True
         btn.draw(active)
 
@@ -302,8 +300,8 @@ def refresh_screen(player_plateau, enemy_plateau, ship_list, hit_list, buttons, 
         window_surface.blit(helper,
                             helper.get_rect(center=(buttons["menu"].rect.centerx, buttons["menu"].rect.bottom + 12)))
 
-    hit_list.draw(window_surface)
     ship_list.draw(window_surface)
+    hit_list.draw(window_surface)
     if selected is not None:
         pygame.draw.rect(window_surface, YELLOW, selected.rect.inflate(8, 8), 4, border_radius=6)
 
@@ -312,6 +310,7 @@ def refresh_screen(player_plateau, enemy_plateau, ship_list, hit_list, buttons, 
         overlay.fill((15, 15, 15, 120))
         window_surface.blit(overlay, enemy_plateau.rect.topleft)
 
+    display_grid_footers()
     display_instruction(instruction)
     pygame.display.update()
 
@@ -357,19 +356,34 @@ def setup_buttons():
     center_x = WINDOW_W // 2
     row_y = WINDOW_H - 145
     gap = 14
+
     tir_w = 100
     move_w = 170
-    axis_w = 90
-    row_total_w = tir_w + gap + move_w + gap + axis_w
-    row_start_x = center_x - row_total_w // 2
+    action_total_w = tir_w + gap + move_w
+    action_start_x = center_x - action_total_w // 2
+
+    rotate_w = 180
+    lock_w = 140
+    setup_total_w = rotate_w + gap + lock_w
+    setup_start_x = center_x - setup_total_w // 2
+
+    # Boutons directionnels au milieu, en vertical, en lettres seules.
+    dir_w = 60
+    dir_h = 42
+    dir_gap = 12
+    dir_x = ((PLAYER_GRID_X + GRID_W + ENEMY_GRID_X) // 2) - (dir_w // 2)
+    dir_y = GRID_Y + 90
 
     return {
         "menu": TextButton("menu", "MENU", 22, 22, 100, 42, MENU_BLUE),
-        "rotate": TextButton("rotate", "Rotation", center_x - 280, WINDOW_H - 145, 180, 52),
-        "action_tir": TextButton("action_tir", "Tir", row_start_x, row_y, tir_w, 46),
-        "action_move": TextButton("action_move", "Deplacement", row_start_x + tir_w + gap, row_y, move_w, 46),
-        "axis": TextButton("axis", "H / V", row_start_x + tir_w + gap + move_w + gap, row_y, axis_w, 46),
-        "lock": TextButton("lock", "Valider", center_x - 70, WINDOW_H - 145, 140, 46),
+        "rotate": TextButton("rotate", "Rotation", setup_start_x, row_y, rotate_w, 46),
+        "action_tir": TextButton("action_tir", "Tir", action_start_x, row_y, tir_w, 46),
+        "action_move": TextButton("action_move", "Deplacement", action_start_x + tir_w + gap, row_y, move_w, 46),
+        "north": TextButton("north", "N", dir_x, dir_y, dir_w, dir_h),
+        "south": TextButton("south", "S", dir_x, dir_y + (dir_h + dir_gap), dir_w, dir_h),
+        "east": TextButton("east", "E", dir_x, dir_y + (dir_h + dir_gap) * 2, dir_w, dir_h),
+        "west": TextButton("west", "O", dir_x, dir_y + (dir_h + dir_gap) * 3, dir_w, dir_h),
+        "lock": TextButton("lock", "Valider", setup_start_x + rotate_w + gap, row_y, lock_w, 46),
     }
 
 
@@ -564,6 +578,82 @@ def snap_ship_to_grid(plateau: Plateau, ship: Bateau, probe_pos: tuple[int, int]
     return True
 
 
+def get_ship_anchor_case(plateau: Plateau, ship: Bateau) -> Case | None:
+    probe = ship.rect.midleft if ship.alignement == Alignement.Horizontal else ship.rect.midtop
+    anchor = plateau.get_cell_from_pixel(probe[0], probe[1])
+    if anchor is not None:
+        return anchor
+
+    overlapping = [c for c in plateau.cells if ship.rect.colliderect(c.rect)]
+    if not overlapping:
+        return None
+
+    if ship.alignement == Alignement.Horizontal:
+        return min(overlapping, key=lambda c: (c.colonne, c.ligne))
+    return min(overlapping, key=lambda c: (c.ligne, c.colonne))
+
+
+def detect_ship_drop_issue(plateau: Plateau, ship: Bateau, ship_group=None):
+    anchor = get_ship_anchor_case(plateau, ship)
+    if anchor is None:
+        return "Ce navire doit etre place entierement dans la grille."
+
+    cases = plateau.calculer_cases_pour_bateau(ship, anchor.ligne, anchor.colonne, ship.alignement)
+    if cases is None:
+        return "Placement invalide : navire hors grille."
+
+    current_positions = {(case.ligne, case.colonne) for case in cases}
+
+    # Verification immediate contre les autres sprites deja poses,
+    # sans attendre la validation finale.
+    if ship_group is not None:
+        other_positions = set()
+        for other_ship in ship_group:
+            if other_ship == ship:
+                continue
+            other_anchor = get_ship_anchor_case(plateau, other_ship)
+            if other_anchor is None:
+                continue
+            other_cases = plateau.calculer_cases_pour_bateau(
+                other_ship,
+                other_anchor.ligne,
+                other_anchor.colonne,
+                other_ship.alignement,
+            )
+            if other_cases is None:
+                continue
+            for other_case in other_cases:
+                other_positions.add((other_case.ligne, other_case.colonne))
+
+        if current_positions & other_positions:
+            return "Superposition interdite : ce navire est deja occupe par un autre."
+
+        for ligne, colonne in current_positions:
+            for dr in range(-1, 2):
+                for dc in range(-1, 2):
+                    if (ligne + dr, colonne + dc) in other_positions:
+                        return "Placement invalide : laissez une case d'espace entre les navires."
+
+    for case in cases:
+        if case.bateau is not None and case.bateau != ship:
+            return "Superposition interdite : un navire ne peut pas etre pose sur un autre."
+
+    if not plateau.respecte_voisinage(cases, ship):
+        return "Placement invalide : laissez une case d'espace entre les navires."
+
+    return None
+
+
+def direction_from_button(button_name: str) -> DirectionDeplacement | None:
+    mapping = {
+        "north": DirectionDeplacement.NORD,
+        "south": DirectionDeplacement.SUD,
+        "east": DirectionDeplacement.EST,
+        "west": DirectionDeplacement.OUEST,
+    }
+    return mapping.get(button_name)
+
+
 def set_up_player_ships(
     player: JoueurHumain,
     enemy: Joueur,
@@ -577,6 +667,8 @@ def set_up_player_ships(
     dragging = False
     offset_x = 0
     offset_y = 0
+    previous_rect = None
+    previous_alignement = None
     fleet_summary = fleet_summary_from_group(ship_group)
     instruction = "Placez les navires puis cliquez sur Valider. Rotation au milieu."
     clock = pygame.time.Clock()
@@ -591,9 +683,18 @@ def set_up_player_ships(
                 if buttons["menu"].clicked(pos):
                     return False
                 if buttons["rotate"].clicked(pos) and selected is not None:
+                    old_rect = selected.rect.copy()
+                    old_align = selected.alignement
                     new_align = Alignement.Vertical if selected.alignement == Alignement.Horizontal else Alignement.Horizontal
                     selected.orienter(new_align)
                     snap_ship_to_grid(player.plateau, selected)
+                    issue = detect_ship_drop_issue(player.plateau, selected, ship_group)
+                    if issue is not None:
+                        selected.orienter(old_align)
+                        selected.rect = old_rect
+                        instruction = issue
+                    else:
+                        instruction = f"{selected.nom} tourne en {selected.alignement.value}."
                     continue
                 if buttons["lock"].clicked(pos):
                     still_setup, instruction = lock_in_ships(player, ship_group)
@@ -603,17 +704,34 @@ def set_up_player_ships(
                     if ship.rect.collidepoint(pos):
                         selected = ship
                         dragging = True
+                        previous_rect = ship.rect.copy()
+                        previous_alignement = ship.alignement
                         offset_x = ship.rect.x - pos[0]
                         offset_y = ship.rect.y - pos[1]
                         break
             elif event.type == pygame.MOUSEBUTTONUP:
                 if dragging and selected is not None:
-                    # Snap sur grille pour éviter les faux hors-grille.
-                    snap_ship_to_grid(player.plateau, selected, event.pos)
+                    snapped = snap_ship_to_grid(player.plateau, selected, event.pos)
+                    issue = None if snapped else "Ce navire doit etre place dans la grille."
+                    if issue is None:
+                        issue = detect_ship_drop_issue(player.plateau, selected, ship_group)
+                    if issue is not None:
+                        if previous_alignement is not None:
+                            selected.orienter(previous_alignement)
+                        if previous_rect is not None:
+                            selected.rect = previous_rect
+                        instruction = issue
+                    else:
+                        instruction = f"{selected.nom} place correctement."
                 dragging = False
             elif event.type == pygame.MOUSEMOTION and dragging and selected is not None:
                 selected.rect.x = event.pos[0] + offset_x
                 selected.rect.y = event.pos[1] + offset_y
+                live_issue = detect_ship_drop_issue(player.plateau, selected, ship_group)
+                if live_issue is not None:
+                    instruction = live_issue
+                else:
+                    instruction = f"{selected.nom} peut etre place ici."
 
         setup_instruction = f"Flotte: {fleet_summary} | {instruction}"
 
@@ -710,7 +828,7 @@ def run_local_two_players():
 
     buttons = setup_buttons()
     global current_buttons
-    current_buttons = {k: v for k, v in buttons.items() if k in ["menu", "action_tir", "action_move", "axis"]}
+    current_buttons = {k: v for k, v in buttons.items() if k in ["menu", "action_tir", "action_move", "north", "south", "east", "west"]}
 
     current_player = joueur1
     enemy_player = joueur2
@@ -721,7 +839,8 @@ def run_local_two_players():
     current_alignement[0] = alignement_move
 
     selected_ship_name = None
-    instruction = f"Tour de {current_player.nom} : tirez ou déplacez un navire."
+    move_used_this_turn = False
+    instruction = f"Tour de {current_player.nom} : tirez ou deplacez un navire."
     clock = pygame.time.Clock()
 
     while True:
@@ -761,14 +880,15 @@ def run_local_two_players():
                     instruction = "Mode tir actif. Cliquez sur la grille ennemie."
 
                 elif current_buttons["action_move"].clicked(pos):
-                    turn_mode = ActionTour.Deplacer
-                    current_turn_mode[0] = turn_mode
-                    instruction = "Mode deplacement actif : choisissez un navire puis une case adjacente."
-
-                elif current_buttons["axis"].clicked(pos):
-                    alignement_move = Alignement.Vertical if alignement_move == Alignement.Horizontal else Alignement.Horizontal
-                    current_alignement[0] = alignement_move
-                    instruction = f"Sens de deplacement : {alignement_move.value}."
+                    if move_used_this_turn:
+                        turn_mode = ActionTour.Tirer
+                        current_turn_mode[0] = turn_mode
+                        selected_ship_name = None
+                        instruction = "Deplacement deja utilise pour ce tour. Il vous reste seulement des tirs."
+                    else:
+                        turn_mode = ActionTour.Deplacer
+                        current_turn_mode[0] = turn_mode
+                        instruction = "Mode deplacement actif : choisissez un navire puis cliquez sur N, S, E ou O."
 
                 elif turn_mode == ActionTour.Tirer and enemy_player.plateau.rect.collidepoint(pos):
                     cell = enemy_player.plateau.get_cell_from_pixel(*pos)
@@ -792,7 +912,9 @@ def run_local_two_players():
                                 mask_enemy=True,
                             )
                             pygame.time.wait(1200)
-                            show_game_over(f"Victoire de {current_player.nom} !")
+                            partie.determinerVainqueur()
+                            winner_name = partie.Vainqueur.nom if partie.Vainqueur else current_player.nom
+                            show_game_over(f"Vainqueur : {winner_name}")
                             return
 
                         if consumed_action:
@@ -807,76 +929,56 @@ def run_local_two_players():
                                 current_turn_mode[0] = turn_mode
                                 alignement_move = Alignement.Horizontal
                                 current_alignement[0] = alignement_move
+                                move_used_this_turn = False
                                 show_turn_transition(current_player.nom)
                                 instruction = f"Tour de {current_player.nom}. Tours: {partie.ToursResatants}."
 
                 elif turn_mode == ActionTour.Deplacer and current_player.plateau.rect.collidepoint(pos):
                     cell = current_player.plateau.get_cell_from_pixel(*pos)
-
                     if cell is None:
                         instruction = "Case invalide."
-
-                    elif selected_ship_name is None:
-                        if cell.bateau is None:
-                            instruction = "Choisissez d'abord un de vos navires."
-                        else:
-                            selected_ship_name = cell.bateau.nom
-                            instruction = f"{selected_ship_name} selectionne. Cliquez sur une case adjacente."
-
+                    elif cell.bateau is None:
+                        instruction = "Choisissez d'abord un de vos navires."
                     else:
-                        ship = get_ship_by_name(ship_groups[current_player], selected_ship_name)
-                        if ship is None:
-                            selected_ship_name = None
-                            instruction = "Navire introuvable."
+                        selected_ship_name = cell.bateau.nom
+                        instruction = f"{selected_ship_name} selectionne. Cliquez sur N, S, E ou O."
+
+                elif turn_mode == ActionTour.Deplacer:
+                    direction = None
+                    for button_name in ("north", "south", "east", "west"):
+                        if current_buttons[button_name].clicked(pos):
+                            direction = direction_from_button(button_name)
+                            break
+                    if direction is not None:
+                        if selected_ship_name is None:
+                            instruction = "Selectionnez d'abord un navire a deplacer."
                         else:
-                            if ship.alignement != alignement_move:
-                                old_align = ship.alignement
-                                ship.orienter(alignement_move)
-                                anchor_case = ship.getCasesOccupees()[0]
-                                rotated_cases = current_player.plateau.calculer_cases_pour_bateau(
-                                    ship, anchor_case.ligne, anchor_case.colonne, alignement_move
-                                )
-                                if rotated_cases and current_player.plateau.placementValide(ship, rotated_cases):
-                                    current_player.plateau.placerBateau(ship, rotated_cases)
-                                else:
-                                    ship.orienter(old_align)
-
-                            direction = pixel_to_direction(ship, cell)
-
-                            if direction is None:
-                                instruction = "Le deplacement doit etre d'une seule case adjacente."
+                            ship = get_ship_by_name(ship_groups[current_player], selected_ship_name)
+                            if ship is None:
+                                selected_ship_name = None
+                                instruction = "Navire introuvable."
                             else:
                                 resultat = current_player.deplacer(ship, direction)
                                 selected_ship_name = None
-                                if resultat == ResultatDeplacement.DEPLACE:
-                                    instruction = f"{ship.nom} deplace. Retour au mode tir."
-                                elif resultat == ResultatDeplacement.BLOQUE:
-                                    instruction = "Deplacement bloque : navire deja touche."
-                                else:
-                                    instruction = "Deplacement invalide."
-
                                 turn_mode = ActionTour.Tirer
                                 current_turn_mode[0] = turn_mode
-
-                                same_player = partie.jouerTour(None)
-                                if same_player:
-                                    instruction = f"{instruction} Tours restants: {partie.ToursResatants}."
-                                else:
-                                    current_player = partie.joueurCourant
-                                    enemy_player = joueur2 if current_player == joueur1 else joueur1
+                                if resultat == ResultatDeplacement.DEPLACE:
+                                    move_used_this_turn = True
+                                    same_player = partie.jouerTour(None)
                                     alignement_move = Alignement.Horizontal
                                     current_alignement[0] = alignement_move
-                                    show_turn_transition(current_player.nom)
-                                    instruction = f"Tour de {current_player.nom}. Tours: {partie.ToursResatants}."
-                                selected_ship_name = None
-                                if resultat == ResultatDeplacement.DEPLACE:
-                                    instruction = f"{ship.nom} deplace. Retour au mode tir."
-                                    turn_mode = ActionTour.Tirer
-                                    current_turn_mode[0] = turn_mode
+                                    if same_player:
+                                        instruction = f"{ship.nom} deplace d'une case. Vous pouvez encore tirer. Tours restants: {partie.ToursResatants}."
+                                    else:
+                                        current_player = partie.joueurCourant
+                                        enemy_player = joueur2 if current_player == joueur1 else joueur1
+                                        move_used_this_turn = False
+                                        show_turn_transition(current_player.nom)
+                                        instruction = f"Tour de {current_player.nom}. Tours: {partie.ToursResatants}."
                                 elif resultat == ResultatDeplacement.BLOQUE:
                                     instruction = "Deplacement bloque : navire deja touche."
                                 else:
-                                    instruction = "Deplacement invalide."
+                                    instruction = "Deplacement invalide : collision, superposition ou sortie de grille."
 
         selected_ship = get_ship_by_name(ship_groups[current_player], selected_ship_name) if selected_ship_name else None
         refresh_screen(
@@ -972,7 +1074,9 @@ def enemy_take_turn(partie: Partie, enemy: JoueurVirtuel, player: JoueurHumain, 
 def show_game_over(text: str):
     window_surface.fill(GREY)
     draw_lines()
-    draw_centered_text(text, menu_title_font, 240, RED if "Victoire" in text else BLACK)
+    color = RED if ("Victoire" in text or "Vainqueur" in text or "gagne" in text) else BLACK
+    draw_centered_text("FIN DE PARTIE", menu_title_font, 200, color)
+    draw_centered_text(text, body_font, 275, color)
     draw_centered_text("Cliquez pour revenir au menu.", body_font, 340)
     pygame.display.update()
 
@@ -1044,7 +1148,7 @@ def main():
         buttons = setup_buttons()
         global current_buttons
         current_buttons = {k: v for k, v in buttons.items() if
-               k in ["menu", "action_tir", "action_move", "axis"]}
+               k in ["menu", "action_tir", "action_move", "north", "south", "east", "west"]}
 
         turn_mode = ActionTour.Tirer
         alignement_move = Alignement.Horizontal
@@ -1052,6 +1156,7 @@ def main():
         current_alignement[0] = alignement_move
 
         selected_ship_name = None
+        move_used_this_turn = False
         instruction = "Votre tour : tirez sur la grille ennemie ou choisissez Deplacement."
         clock = pygame.time.Clock()
 
@@ -1094,14 +1199,15 @@ def main():
                         instruction = "Mode tir actif. Cliquez sur la grille ennemie."
 
                     elif current_buttons["action_move"].clicked(pos):
-                        turn_mode = ActionTour.Deplacer
-                        current_turn_mode[0] = turn_mode
-                        instruction = "Mode deplacement actif : choisissez un navire puis une case adjacente."
-
-                    elif current_buttons["axis"].clicked(pos):
-                        alignement_move = Alignement.Vertical if alignement_move == Alignement.Horizontal else Alignement.Horizontal
-                        current_alignement[0] = alignement_move
-                        instruction = f"Sens de deplacement : {alignement_move.value}."
+                        if move_used_this_turn:
+                            turn_mode = ActionTour.Tirer
+                            current_turn_mode[0] = turn_mode
+                            selected_ship_name = None
+                            instruction = "Deplacement deja utilise pour ce tour. Il vous reste seulement des tirs."
+                        else:
+                            turn_mode = ActionTour.Deplacer
+                            current_turn_mode[0] = turn_mode
+                            instruction = "Mode deplacement actif : choisissez un navire puis cliquez sur N, S, E ou O."
 
                     elif turn_mode == ActionTour.Tirer and enemy_plateau.rect.collidepoint(pos):
                         cell = enemy_plateau.get_cell_from_pixel(*pos)
@@ -1113,7 +1219,9 @@ def main():
                                 refresh_screen(joueur1.plateau, joueur2.plateau, game_ship_group, hit_list,
                                                current_buttons, instruction, turn_mode, alignement_move)
                                 pygame.time.wait(1200)
-                                show_game_over("Victoire !")
+                                partie.determinerVainqueur()
+                                winner_name = partie.Vainqueur.nom if partie.Vainqueur else joueur1.nom
+                                show_game_over(f"Vainqueur : {winner_name}")
                                 playing = False
                                 break
 
@@ -1123,74 +1231,68 @@ def main():
                                 if same_player:
                                     instruction = f"{instruction} Tours restants: {partie.ToursResatants}."
                                 else:
+                                    move_used_this_turn = False
                                     instruction, defeat = enemy_take_turn(partie, joueur2, joueur1, hit_list)
                                 if defeat:
                                     refresh_screen(joueur1.plateau, joueur2.plateau, game_ship_group, hit_list,
                                                    current_buttons, instruction, turn_mode, alignement_move)
                                     pygame.time.wait(1200)
-                                    show_game_over("Defaite !")
+                                    partie.determinerVainqueur()
+                                    winner_name = partie.Vainqueur.nom if partie.Vainqueur else joueur2.nom
+                                    show_game_over(f"Vainqueur : {winner_name}")
                                     playing = False
                                     break
 
                     elif turn_mode == ActionTour.Deplacer and player_plateau.rect.collidepoint(pos):
                         cell = player_plateau.get_cell_from_pixel(*pos)
-
                         if cell is None:
                             instruction = "Case invalide."
-
-                        elif selected_ship_name is None:
-                            if cell.bateau is None:
-                                instruction = "Choisissez d'abord un de vos navires."
-                            else:
-                                selected_ship_name = cell.bateau.nom
-                                instruction = f"{selected_ship_name} selectionne. Cliquez sur une case adjacente."
-
+                        elif cell.bateau is None:
+                            instruction = "Choisissez d'abord un de vos navires."
                         else:
-                            ship = get_ship_by_name(game_ship_group, selected_ship_name)
-                            if ship is None:
-                                selected_ship_name = None
-                                instruction = "Navire introuvable."
+                            selected_ship_name = cell.bateau.nom
+                            instruction = f"{selected_ship_name} selectionne. Cliquez sur N, S, E ou O."
+
+                    elif turn_mode == ActionTour.Deplacer:
+                        direction = None
+                        for button_name in ("north", "south", "east", "west"):
+                            if current_buttons[button_name].clicked(pos):
+                                direction = direction_from_button(button_name)
+                                break
+                        if direction is not None:
+                            if selected_ship_name is None:
+                                instruction = "Selectionnez d'abord un navire a deplacer."
                             else:
-                                if ship.alignement != alignement_move:
-                                    old_align = ship.alignement
-                                    ship.orienter(alignement_move)
-                                    anchor_case = ship.getCasesOccupees()[0]
-                                    rotated_cases = joueur1.plateau.calculer_cases_pour_bateau(
-                                        ship, anchor_case.ligne, anchor_case.colonne, alignement_move
-                                    )
-                                    if rotated_cases and joueur1.plateau.placementValide(ship, rotated_cases):
-                                        joueur1.plateau.placerBateau(ship, rotated_cases)
-                                    else:
-                                        ship.orienter(old_align)
-
-                                direction = pixel_to_direction(ship, cell)
-
-                                if direction is None:
-                                    instruction = "Le deplacement doit etre d'une seule case adjacente."
+                                ship = get_ship_by_name(game_ship_group, selected_ship_name)
+                                if ship is None:
+                                    selected_ship_name = None
+                                    instruction = "Navire introuvable."
                                 else:
                                     resultat = joueur1.deplacer(ship, direction)
                                     selected_ship_name = None
+                                    turn_mode = ActionTour.Tirer
+                                    current_turn_mode[0] = turn_mode
                                     if resultat == ResultatDeplacement.DEPLACE:
-                                        instruction = f"{ship.nom} deplace. Retour au mode tir."
-                                        turn_mode = ActionTour.Tirer
-                                        current_turn_mode[0] = turn_mode
-                                    elif resultat == ResultatDeplacement.BLOQUE:
-                                        instruction = "Deplacement bloque : navire deja touche."
-                                    else:
-                                        instruction = "Deplacement invalide."
-
-                                    same_player = partie.jouerTour(None)
-                                    if same_player:
-                                        instruction = f"{instruction} Tours restants: {partie.ToursResatants}."
-                                    else:
-                                        instruction, defeat = enemy_take_turn(partie, joueur2, joueur1, hit_list)
+                                        move_used_this_turn = True
+                                        same_player = partie.jouerTour(None)
+                                        if same_player:
+                                            instruction = f"{ship.nom} deplace d'une case. Vous pouvez encore tirer. Tours restants: {partie.ToursResatants}."
+                                        else:
+                                            move_used_this_turn = False
+                                            instruction, defeat = enemy_take_turn(partie, joueur2, joueur1, hit_list)
                                         if defeat:
                                             refresh_screen(joueur1.plateau, joueur2.plateau, game_ship_group, hit_list,
                                                            current_buttons, instruction, turn_mode, alignement_move)
                                             pygame.time.wait(1200)
-                                            show_game_over("Defaite !")
+                                            partie.determinerVainqueur()
+                                            winner_name = partie.Vainqueur.nom if partie.Vainqueur else joueur2.nom
+                                            show_game_over(f"Vainqueur : {winner_name}")
                                             playing = False
                                             break
+                                    elif resultat == ResultatDeplacement.BLOQUE:
+                                        instruction = "Deplacement bloque : navire deja touche."
+                                    else:
+                                        instruction = "Deplacement invalide : collision, superposition ou sortie de grille."
 
             selected_ship = get_ship_by_name(game_ship_group, selected_ship_name) if selected_ship_name else None
             refresh_screen(

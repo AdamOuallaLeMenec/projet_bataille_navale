@@ -92,7 +92,7 @@ def run_network_game(reseau: ReseauLocal, mode: str, difficulty: str):
     instruction = "Votre tour." if my_turn else "Tour de l'adversaire."
     clock = pygame.time.Clock()
     net_buttons = setup_buttons()
-    net_buttons = {k: v for k, v in net_buttons.items() if k in ["menu", "action_tir", "action_move", "axis"]}
+    net_buttons = {k: v for k, v in net_buttons.items() if k in ["menu", "action_tir", "action_move", "north", "south", "east", "west"]}
     turn_mode = ActionTour.Tirer
 
     selected_ship_name = None
@@ -121,48 +121,41 @@ def run_network_game(reseau: ReseauLocal, mode: str, difficulty: str):
                     selected_ship_name = None
                 elif net_buttons["action_move"].clicked(pos):
                     turn_mode = ActionTour.Deplacer
-                    instruction = "Mode deplacement en reseau : choisissez un navire puis une case adjacente."
-                elif net_buttons["axis"].clicked(pos):
-                    deplacement_alignement = Alignement.Vertical if deplacement_alignement == Alignement.Horizontal else Alignement.Horizontal
-                    instruction = f"Orientation de deplacement : {deplacement_alignement.value}."
+                    instruction = "Mode deplacement en reseau : choisissez un navire puis cliquez sur N, S, E ou O."
                 elif turn_mode == ActionTour.Deplacer and player_plateau.rect.collidepoint(pos):
                     cell = player_plateau.get_cell_from_pixel(*pos)
                     if cell is None:
                         instruction = "Case invalide."
-                    elif selected_ship_name is None:
-                        if cell.bateau is None:
-                            instruction = "Choisissez d'abord un navire sur votre grille."
-                        else:
-                            selected_ship_name = cell.bateau.nom
-                            instruction = f"{selected_ship_name} selectionne. Cliquez sur une case adjacente pour deplacer."
+                    elif cell.bateau is None:
+                        instruction = "Choisissez d'abord un navire sur votre grille."
                     else:
-                        ship = main_module.get_ship_by_name(game_ship_group, selected_ship_name)
-                        if ship is None:
-                            selected_ship_name = None
-                            instruction = "Navire introuvable."
+                        selected_ship_name = cell.bateau.nom
+                        instruction = f"{selected_ship_name} selectionne. Cliquez sur N, S, E ou O."
+                elif turn_mode == ActionTour.Deplacer:
+                    direction = None
+                    for button_name in ("north", "south", "east", "west"):
+                        if net_buttons[button_name].clicked(pos):
+                            direction = main_module.direction_from_button(button_name)
+                            break
+                    if direction is not None:
+                        if selected_ship_name is None:
+                            instruction = "Selectionnez d'abord un navire a deplacer."
                         else:
-                            if ship.alignement != deplacement_alignement:
-                                old_align = ship.alignement
-                                ship.orienter(deplacement_alignement)
-                                anchor_case = ship.getCasesOccupees()[0]
-                                rotated_cases = joueur1.plateau.calculer_cases_pour_bateau(ship, anchor_case.ligne, anchor_case.colonne, deplacement_alignement)
-                                if rotated_cases and joueur1.plateau.placementValide(ship, rotated_cases):
-                                    joueur1.plateau.placerBateau(ship, rotated_cases)
-                                else:
-                                    ship.orienter(old_align)
-                            direction = main_module.pixel_to_direction(ship, cell)
-                            if direction is None:
-                                instruction = "Le deplacement doit etre d'une seule case adjacente."
+                            ship = main_module.get_ship_by_name(game_ship_group, selected_ship_name)
+                            if ship is None:
+                                selected_ship_name = None
+                                instruction = "Navire introuvable."
                             else:
                                 resultat = joueur1.deplacer(ship, direction)
                                 selected_ship_name = None
+                                turn_mode = ActionTour.Tirer
                                 if resultat == ResultatDeplacement.DEPLACE:
-                                    instruction = f"{ship.nom} deplace. Retour au mode tir."
-                                    turn_mode = ActionTour.Tirer
+                                    instruction = f"{ship.nom} deplace d'une case. Tour adverse."
+                                    my_turn = False
                                 elif resultat == ResultatDeplacement.BLOQUE:
                                     instruction = "Deplacement bloque : navire deja touche."
                                 else:
-                                    instruction = "Deplacement invalide."
+                                    instruction = "Deplacement invalide : collision, superposition ou sortie de grille."
 
         incoming = reseau.recevoir()
         if incoming:
@@ -186,8 +179,8 @@ def run_network_game(reseau: ReseauLocal, mode: str, difficulty: str):
                             reseau.envoyer("GAME_OVER WIN")
                             show_game_over("Defaite !")
                             return
-                        my_turn = (resultat == ResultatTir.RATE)
-                        instruction = "Adversaire a rate. Votre tour." if my_turn else "Adversaire a joue."
+                        my_turn = True
+                        instruction = "L'adversaire a joue. Votre tour."
                 elif parts[0] == "RESULT" and len(parts) == 4:
                     status = parse_response_result(parts[1])
                     r, c = int(parts[2]), int(parts[3])
@@ -200,17 +193,14 @@ def run_network_game(reseau: ReseauLocal, mode: str, difficulty: str):
                         else:
                             target.etat = EtatCase.RATEE
                             hit_list.add(CellHit(asset_path("Sprites/miss.png"), target.rect.center))
+                    my_turn = False
                     if status == ResultatTir.RATE:
-                        my_turn = False
-                        instruction = "Rate. Tour adversaire."
+                        instruction = "Rate. Tour adverse."
                     elif status == ResultatTir.TOUCHE:
-                        my_turn = True
-                        instruction = "Touche ! Rejouez."
+                        instruction = "Touche ! Tour adverse."
                     elif status == ResultatTir.COULE:
-                        my_turn = True
-                        instruction = "Coule ! Rejouez."
+                        instruction = "Coule ! Tour adverse."
                     else:
-                        my_turn = False
                         instruction = "Resultat invalide."
                 elif parts[0] == "GAME_OVER" and len(parts) > 1:
                     if parts[1] == "WIN":

@@ -7,7 +7,7 @@ class Partie:
         self.joueur1 = joueur1
         self.joueur2 = joueur2
         self.joueurCourant = joueur1
-        self.ToursResatants = 0
+        self.ToursResatants = 1
         self.Vainqueur = None
 
     def initialiser(self):
@@ -18,18 +18,19 @@ class Partie:
         self.initialiser()
 
     def demarrerTour(self):
-        self.ToursResatants = max(1, self.calculerToursInitials(self.joueurCourant))
+        self.ToursResatants = self.calculerToursInitials(self.joueurCourant)
 
     def jouerTour(self, resultat_tir: ResultatTir | None = None) -> bool:
-        """Consomme une action et retourne True si le même joueur continue."""
-        if self.ToursResatants <= 0:
-            self.demarrerTour()
+        """
+        Une action valide consomme 1 tour.
+        Si le joueur a encore des tours, il rejoue.
+        Sinon on passe à l'adversaire.
+        Si un navire ennemi est coulé, on ajoute 1 tour supplémentaire.
+        """
+        if resultat_tir == ResultatTir.COULE:
+            self.accorderTourSupplementaire()
 
         self.ToursResatants -= 1
-
-        # Variante demandée: toucher ou couler accorde un tour supplémentaire.
-        if resultat_tir in (ResultatTir.TOUCHE, ResultatTir.COULE):
-            self.accorderTourSupplementaire()
 
         if self.estTerminee():
             self.determinerVainqueur()
@@ -46,9 +47,14 @@ class Partie:
         return 1 + self.calculerBonusFlotte(j)
 
     def calculerBonusFlotte(self, j: Joueur) -> int:
-        if not j.getPlateau().aUnPorteAvionVivant():
+        plateau = j.getPlateau()
+
+        # Pas de bonus si aucun porte-avions vivant
+        if not plateau.aUnPorteAvionVivant():
             return 0
-        return j.getPlateau().compterNaviresVivantsHorsPatrouilleurs()
+
+        # Chaque navire vivant sauf patrouilleur donne +1
+        return plateau.compterNaviresVivantsHorsPatrouilleurs()
 
     def accorderTourSupplementaire(self) -> None:
         self.ToursResatants += 1
