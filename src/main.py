@@ -653,6 +653,31 @@ def direction_from_button(button_name: str) -> DirectionDeplacement | None:
     }
     return mapping.get(button_name)
 
+def safe_move_ship(player: JoueurHumain, ship: Bateau, direction: DirectionDeplacement) -> tuple[ResultatDeplacement, str | None]:
+    """
+    Sécurise le déplacement d'un navire pour éviter un crash si l'état interne
+    du sprite et du plateau n'est pas parfaitement synchronisé.
+    """
+    try:
+        if ship is None:
+            return ResultatDeplacement.INVALIDE, "Navire introuvable."
+
+        # Si les cases occupées ont été perdues, on tente une resynchronisation
+        # à partir de l'ancre actuelle du sprite sur la grille.
+        if not ship.getCasesOccupees():
+            anchor = get_ship_anchor_case(player.plateau, ship)
+            if anchor is None:
+                return ResultatDeplacement.INVALIDE, "Impossible de retrouver ce navire sur la grille."
+            cases = player.plateau.calculer_cases_pour_bateau(ship, anchor.ligne, anchor.colonne, ship.alignement)
+            if cases is None or not player.plateau.placementValide(ship, cases):
+                return ResultatDeplacement.INVALIDE, "Etat invalide du navire sur la grille."
+            player.plateau.placerBateau(ship, cases)
+
+        resultat = player.deplacer(ship, direction)
+        return resultat, None
+    except Exception as exc:
+        return ResultatDeplacement.INVALIDE, f"Erreur interne pendant le deplacement : {exc}"
+
 
 def set_up_player_ships(
     player: JoueurHumain,
@@ -958,7 +983,7 @@ def run_local_two_players():
                                 selected_ship_name = None
                                 instruction = "Navire introuvable."
                             else:
-                                resultat = current_player.deplacer(ship, direction)
+                                resultat, move_error = safe_move_ship(current_player, ship, direction)
                                 selected_ship_name = None
                                 turn_mode = ActionTour.Tirer
                                 current_turn_mode[0] = turn_mode
@@ -978,7 +1003,7 @@ def run_local_two_players():
                                 elif resultat == ResultatDeplacement.BLOQUE:
                                     instruction = "Deplacement bloque : navire deja touche."
                                 else:
-                                    instruction = "Deplacement invalide : collision, superposition ou sortie de grille."
+                                    instruction = move_error or "Deplacement invalide : collision, superposition ou sortie de grille."
 
         selected_ship = get_ship_by_name(ship_groups[current_player], selected_ship_name) if selected_ship_name else None
         refresh_screen(
@@ -1268,12 +1293,13 @@ def main():
                                     selected_ship_name = None
                                     instruction = "Navire introuvable."
                                 else:
-                                    resultat = joueur1.deplacer(ship, direction)
+                                    resultat, move_error = safe_move_ship(joueur1, ship, direction)
                                     selected_ship_name = None
                                     turn_mode = ActionTour.Tirer
                                     current_turn_mode[0] = turn_mode
                                     if resultat == ResultatDeplacement.DEPLACE:
                                         move_used_this_turn = True
+                                        defeat = False
                                         same_player = partie.jouerTour(None)
                                         if same_player:
                                             instruction = f"{ship.nom} deplace d'une case. Vous pouvez encore tirer. Tours restants: {partie.ToursResatants}."
@@ -1292,7 +1318,7 @@ def main():
                                     elif resultat == ResultatDeplacement.BLOQUE:
                                         instruction = "Deplacement bloque : navire deja touche."
                                     else:
-                                        instruction = "Deplacement invalide : collision, superposition ou sortie de grille."
+                                        instruction = move_error or "Deplacement invalide : collision, superposition ou sortie de grille."
 
             selected_ship = get_ship_by_name(game_ship_group, selected_ship_name) if selected_ship_name else None
             refresh_screen(

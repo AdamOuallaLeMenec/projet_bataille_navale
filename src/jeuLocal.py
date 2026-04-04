@@ -146,7 +146,7 @@ def run_network_game(reseau: ReseauLocal, mode: str, difficulty: str):
                                 selected_ship_name = None
                                 instruction = "Navire introuvable."
                             else:
-                                resultat = joueur1.deplacer(ship, direction)
+                                resultat, move_error = main_module.safe_move_ship(joueur1, ship, direction)
                                 selected_ship_name = None
                                 turn_mode = ActionTour.Tirer
                                 if resultat == ResultatDeplacement.DEPLACE:
@@ -155,7 +155,7 @@ def run_network_game(reseau: ReseauLocal, mode: str, difficulty: str):
                                 elif resultat == ResultatDeplacement.BLOQUE:
                                     instruction = "Deplacement bloque : navire deja touche."
                                 else:
-                                    instruction = "Deplacement invalide : collision, superposition ou sortie de grille."
+                                    instruction = move_error or "Deplacement invalide : collision, superposition ou sortie de grille."
 
         incoming = reseau.recevoir()
         if incoming:
