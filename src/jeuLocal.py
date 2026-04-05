@@ -149,7 +149,7 @@ def run_network_game(reseau: ReseauLocal, mode: str, difficulty: str):
         pygame.time.wait(100)
 
     my_turn = mode == "create"
-    instruction = f"Votre tour ! Tours : {partie.ToursResatants}." if my_turn else "Tour de l'adversaire."
+    instruction = f"Votre tour ! Tours : {partie.ToursRestants}." if my_turn else "Tour de l'adversaire."
     clock = pygame.time.Clock()
     net_buttons = setup_buttons()
     net_buttons = {k: v for k, v in net_buttons.items() if k in ["menu", "action_tir", "action_move", "north", "south", "east", "west"]}
@@ -224,7 +224,7 @@ def run_network_game(reseau: ReseauLocal, mode: str, difficulty: str):
                                     move_used_this_turn = True
                                     same_player = partie.jouerTour(None)
                                     if same_player:
-                                        instruction = f"{ship.nom} deplace. Vous pouvez encore tirer. Tours : {partie.ToursResatants}."
+                                        instruction = f"{ship.nom} deplace. Vous pouvez encore tirer. Tours : {partie.ToursRestants}."
                                     else:
                                         move_used_this_turn = False
                                         reseau.envoyer("PASS")
@@ -294,7 +294,7 @@ def run_network_game(reseau: ReseauLocal, mode: str, difficulty: str):
                         if same_player:
                             reseau.envoyer("REPLAY")
                             my_turn = True
-                            instruction = f"{msg_tir} Vous rejouez. Tours restants : {partie.ToursResatants}."
+                            instruction = f"{msg_tir} Vous rejouez. Tours restants : {partie.ToursRestants}."
                         else:
                             reseau.envoyer("PASS")
                             my_turn = False
@@ -311,7 +311,7 @@ def run_network_game(reseau: ReseauLocal, mode: str, difficulty: str):
                     partie.demarrerTour()
                     my_turn = True
                     move_used_this_turn = False
-                    instruction = f"Votre tour ! Tours disponibles : {partie.ToursResatants}."
+                    instruction = f"Votre tour ! Tours disponibles : {partie.ToursRestants}."
 
                 elif parts[0] == "GAME_OVER" and len(parts) > 1:
                     if parts[1] == "WIN":

@@ -9,7 +9,7 @@ from navires.bateau import Alignement, DirectionDeplacement
 
 
 class JoueurVirtuel(Joueur):
-    def __init__(self, nom: str, plateau: Plateau, difficulty="medium"):
+    def __init__(self, nom: str, plateau: Plateau, difficulty="easy"):
         super().__init__(nom, plateau)
         self.derniereCaseTouchee: tuple[int, int] | None = None
         self.second_hit: tuple[int, int] | None = None

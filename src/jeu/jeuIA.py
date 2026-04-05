@@ -103,7 +103,7 @@ def run_ia_game(difficulty: str):
                             defeat = False
                             same_player = partie.jouerTour(tir_result)
                             if same_player:
-                                instruction = f"{instruction} Tours restants: {partie.ToursResatants}."
+                                instruction = f"{instruction} Tours restants: {partie.ToursRestants}."
                             else:
                                 move_used_this_turn = False
                                 instruction, defeat = _enemy_take_turn(partie, joueur2, joueur1, hit_list, m)
@@ -151,7 +151,7 @@ def run_ia_game(difficulty: str):
                                     defeat = False
                                     same_player = partie.jouerTour(None)
                                     if same_player:
-                                        instruction = f"{ship.nom} deplace d'une case. Vous pouvez encore tirer. Tours restants: {partie.ToursResatants}."
+                                        instruction = f"{ship.nom} deplace d'une case. Vous pouvez encore tirer. Tours restants: {partie.ToursRestants}."
                                     else:
                                         move_used_this_turn = False
                                         instruction, defeat = _enemy_take_turn(partie, joueur2, joueur1, hit_list, m)
@@ -250,9 +250,9 @@ def _enemy_take_turn(partie, enemy, player, hit_list, m):
 
         same_player = partie.jouerTour(resultat)
         if same_player:
-            instruction = f"L'ennemi continue. Tours restants IA: {partie.ToursResatants}."
+            instruction = f"L'ennemi continue. Tours restants IA: {partie.ToursRestants}."
         else:
-            instruction = f"L'ennemi termine. A vous de jouer ({partie.ToursResatants} tours)."
+            instruction = f"L'ennemi termine. A vous de jouer ({partie.ToursRestants} tours)."
 
         m.refresh_screen(
             player.plateau,

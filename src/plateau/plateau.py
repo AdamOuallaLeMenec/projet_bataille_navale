@@ -24,18 +24,21 @@ class Plateau:
         self.grid_size_h = self.NB_LIGNES * self.cell_width
         self.rect = pygame.Rect(x_loc, y_loc, self.grid_size_w, self.grid_size_h)
         self.surface = pygame.Surface((self.grid_size_w, self.grid_size_h))
-        self.casesImportantes: list[Case] = []
         self.bateaux: list[Bateau] = []
         self.cells: list[Case] = []
+        self._cells_dict: dict[tuple[int, int], Case] = {}
         self.initialiserGrille()
 
     def initialiserGrille(self) -> None:
         self.cells = []
+        self._cells_dict = {}
         for ligne in range(self.NB_LIGNES):
             for colonne in range(self.NB_COLONNES):
                 x = self.x_loc + colonne * self.cell_width
                 y = self.y_loc + ligne * self.cell_width
-                self.cells.append(Case(ligne, colonne, x, y, self.cell_width))
+                case = Case(ligne, colonne, x, y, self.cell_width)
+                self.cells.append(case)
+                self._cells_dict[(ligne, colonne)] = case
         self.draw_grid()
 
     def draw_grid(self, window_surface: pygame.Surface | None = None, font: pygame.font.Font | None = None):
@@ -68,25 +71,13 @@ class Plateau:
         return 0 <= ligne < self.NB_LIGNES and 0 <= colonne < self.NB_COLONNES
 
     def getCase(self, ligne: int, colonne: int) -> Case | None:
-        for cell in self.cells:
-            if cell.ligne == ligne and cell.colonne == colonne:
-                return cell
-        return None
+        return self._cells_dict.get((ligne, colonne))
 
     def get_cell_from_pixel(self, x: int, y: int) -> Case | None:
         for cell in self.cells:
             if cell.rect.collidepoint(x, y):
                 return cell
         return None
-
-    def enregistrerCase(self, case: Case) -> None:
-        if case not in self.casesImportantes:
-            self.casesImportantes.append(case)
-
-    def supprimerCaseSiVide(self, ligne: int, colonne: int) -> None:
-        case = self.getCase(ligne, colonne)
-        if case and not case.estImportante() and case in self.casesImportantes:
-            self.casesImportantes.remove(case)
 
     def respecte_voisinage(self, cases_proposees: list[Case], bateau_actuel: Bateau) -> bool:
         for case in cases_proposees:
@@ -133,7 +124,6 @@ class Plateau:
 
         for c in cases:
             c.placerBateau(b)
-            self.enregistrerCase(c)
 
         b.assignerCases(cases)
         b.row = cases[0].ligne
@@ -149,12 +139,6 @@ class Plateau:
         if cible is None:
             return ResultatTir.INVALIDE
         return cible.recevoirTir()
-
-    def deplacementValide(self, b: Bateau, dir: DirectionDeplacement) -> bool:
-        nouvelles = b.calculerCasesApresDeplacement(dir, self)
-        if nouvelles is None or not self.placementValide(b, nouvelles):
-            return False
-        return True
 
     def mettreAJourCasesApresDeplacement(self, anciennes: list[Case], nouvelles: list[Case]) -> None:
         bateau = anciennes[0].bateau if anciennes else None
