@@ -1,6 +1,6 @@
 ﻿Journal GIT - Projet Bataille Navale
 =====================================
-Équipe  : AICHA TAHARBELLAR (Aicha), marwaidrissi (Marwa), AdamOuallaLeMenec (Adam), zakou77 (Zakoua)
+Équipe  : AICHA TAHARBELLAR (Aicha), marwaidrissi (Marwa), AdamOuallaLeMenec (Adam), zakou77 (Zakarya)
 Dépôt   : https://github.com/AICHA TAHARBELLAR/projet_bataille_navale
 Branche : main
 
