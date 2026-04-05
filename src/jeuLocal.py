@@ -32,6 +32,21 @@ def format_result_string(result):
     return "INVALIDE"
 
 
+def serialize_fleet(fleet_counts: dict) -> str:
+    """Sérialise les comptages de flotte pour envoi réseau."""
+    return ",".join(f"{name}:{count}" for name, count in fleet_counts.items())
+
+
+def deserialize_fleet(data: str) -> dict:
+    """Désérialise les comptages de flotte reçus du réseau."""
+    result = {}
+    for part in data.split(","):
+        if ":" in part:
+            name, count = part.rsplit(":", 1)
+            result[name] = int(count)
+    return result
+
+
 def run_network_game(reseau: ReseauLocal, mode: str, difficulty: str):
     # Import ici pour éviter les imports circulaires pendant l'initialisation
     import main as main_module
@@ -39,6 +54,8 @@ def run_network_game(reseau: ReseauLocal, mode: str, difficulty: str):
     Plateau = main_module.Plateau
     JoueurHumain = main_module.JoueurHumain
     create_fleet_sprites = main_module.create_fleet_sprites
+    build_fleet_spec = main_module.build_fleet_spec
+    generate_balanced_fleet_pair = main_module.generate_balanced_fleet_pair
     set_up_player_ships = main_module.set_up_player_ships
     show_game_over = main_module.show_game_over
     get_ship_by_name = main_module.get_ship_by_name
@@ -51,61 +68,121 @@ def run_network_game(reseau: ReseauLocal, mode: str, difficulty: str):
     ResultatDeplacement = main_module.ResultatDeplacement
     EtatCase = main_module.EtatCase
     setup_buttons = main_module.setup_buttons
+    safe_move_ship = main_module.safe_move_ship
+    direction_from_button = main_module.direction_from_button
+    Partie = main_module.Partie
+
     player_plateau = Plateau(main_module.PLAYER_GRID_X, main_module.GRID_Y)
     enemy_plateau = Plateau(main_module.ENEMY_GRID_X, main_module.GRID_Y)
 
     joueur1 = JoueurHumain("Joueur", player_plateau)
-    partie = main_module.Partie(joueur1, JoueurHumain("Adversaire", enemy_plateau))
+    joueur_ennemi = JoueurHumain("Adversaire", enemy_plateau)
+    partie = Partie(joueur1, joueur_ennemi)
     partie.demarrer()
 
-    ship_group = create_fleet_sprites()
+    # --- SYNCHRONISATION DES FLOTTES ---
+    # L'hôte génère la spec de flotte et l'envoie au client avant le placement.
+    if mode == "create":
+        fleet_counts, _ = generate_balanced_fleet_pair()
+        reseau.envoyer(f"FLEET {serialize_fleet(fleet_counts)}")
+        fleet_spec = build_fleet_spec(fleet_counts)
+    else:
+        fleet_spec = None
+        start_time = pygame.time.get_ticks()
+        while fleet_spec is None:
+            msg = reseau.recevoir()
+            if msg is None:
+                show_game_over("Adversaire déconnecté. Retour au menu.")
+                return
+            if msg:
+                for line in msg.strip().splitlines():
+                    parts = line.strip().split(" ", 1)
+                    if parts[0] == "FLEET" and len(parts) == 2:
+                        fleet_counts = deserialize_fleet(parts[1])
+                        fleet_spec = build_fleet_spec(fleet_counts)
+                        break
+            if pygame.time.get_ticks() - start_time > 60000:
+                show_game_over("Connexion perdue. Retour au menu.")
+                return
+            for event in pygame.event.get():
+                if event.type == QUIT:
+                    pygame.quit()
+                    main_module.sys.exit()
+            main_module.window_surface.fill(main_module.GREY)
+            draw_centered_text("Synchronisation des flottes...", main_module.body_font, main_module.WINDOW_H // 2)
+            pygame.display.update()
+            pygame.time.wait(100)
+
+    # --- PLACEMENT DES NAVIRES ---
+    ship_group = create_fleet_sprites(fleet_spec)
     hit_list = pygame.sprite.Group()
 
-    instruction = "Placez vos navires puis cliquez Valider."
-    adversary = JoueurHumain("Adversaire", enemy_plateau)
-    if not set_up_player_ships(joueur1, adversary, ship_group, hit_list):
+    if not set_up_player_ships(joueur1, joueur_ennemi, ship_group, hit_list):
         return
 
     joueur1.plateau.bateaux = list(ship_group)
     game_ship_group = pygame.sprite.Group(joueur1.plateau.bateaux)
+    partie.demarrerTour()
 
+    # --- SYNCHRONISATION READY ---
     reseau.envoyer("READY")
     start_time = pygame.time.get_ticks()
     ready = False
     while not ready:
         msg = reseau.recevoir()
-        if msg.strip() == "READY":
+        if msg is None:
+            show_game_over("Adversaire déconnecté. Retour au menu.")
+            return
+        if msg and "READY" in msg:
             ready = True
             break
-        if pygame.time.get_ticks() - start_time > 15000:
+        if pygame.time.get_ticks() - start_time > 120000:
             show_game_over("Connexion perdue. Retour au menu.")
             return
         for event in pygame.event.get():
             if event.type == QUIT:
-                pygame.quit(); main_module.sys.exit()
+                pygame.quit()
+                main_module.sys.exit()
         main_module.window_surface.fill(main_module.GREY)
         draw_centered_text("En attente de l'adversaire...", main_module.body_font, main_module.WINDOW_H // 2)
         pygame.display.update()
         pygame.time.wait(100)
 
     my_turn = mode == "create"
-    instruction = "Votre tour." if my_turn else "Tour de l'adversaire."
+    instruction = f"Votre tour ! Tours : {partie.ToursResatants}." if my_turn else "Tour de l'adversaire."
     clock = pygame.time.Clock()
     net_buttons = setup_buttons()
     net_buttons = {k: v for k, v in net_buttons.items() if k in ["menu", "action_tir", "action_move", "north", "south", "east", "west"]}
     turn_mode = ActionTour.Tirer
-
     selected_ship_name = None
-    deplacement_alignement = Alignement.Horizontal
+    move_used_this_turn = False
+
     while True:
         for event in pygame.event.get():
             if event.type == QUIT:
-                pygame.quit(); main_module.sys.exit()
+                pygame.quit()
+                main_module.sys.exit()
             if event.type == MOUSEBUTTONDOWN:
                 pos = event.pos
+
                 if net_buttons["menu"].clicked(pos):
                     return
-                if my_turn and turn_mode == ActionTour.Tirer and enemy_plateau.rect.collidepoint(pos):
+
+                elif net_buttons["action_tir"].clicked(pos):
+                    turn_mode = ActionTour.Tirer
+                    selected_ship_name = None
+                    instruction = "Mode tir actif."
+
+                elif net_buttons["action_move"].clicked(pos):
+                    if not my_turn:
+                        instruction = "Ce n'est pas votre tour."
+                    elif move_used_this_turn:
+                        instruction = "Deplacement deja utilise ce tour."
+                    else:
+                        turn_mode = ActionTour.Deplacer
+                        instruction = "Mode deplacement : choisissez un navire puis N, S, E ou O."
+
+                elif my_turn and turn_mode == ActionTour.Tirer and enemy_plateau.rect.collidepoint(pos):
                     cell = enemy_plateau.get_cell_from_pixel(*pos)
                     if cell is None:
                         instruction = "Cliquez sur la grille ennemie."
@@ -113,57 +190,64 @@ def run_network_game(reseau: ReseauLocal, mode: str, difficulty: str):
                         instruction = "Case deja ciblee."
                     else:
                         reseau.envoyer(f"TIR {cell.ligne} {cell.colonne}")
-                        instruction = "Tir envoye, attente resultat."
-                        my_turn = False
-                elif net_buttons["action_tir"].clicked(pos):
-                    turn_mode = ActionTour.Tirer
-                    instruction = "Mode tir."
-                    selected_ship_name = None
-                elif net_buttons["action_move"].clicked(pos):
-                    turn_mode = ActionTour.Deplacer
-                    instruction = "Mode deplacement en reseau : choisissez un navire puis cliquez sur N, S, E ou O."
-                elif turn_mode == ActionTour.Deplacer and player_plateau.rect.collidepoint(pos):
+                        instruction = "Tir envoye, attente du resultat..."
+
+                elif my_turn and turn_mode == ActionTour.Deplacer and player_plateau.rect.collidepoint(pos):
                     cell = player_plateau.get_cell_from_pixel(*pos)
                     if cell is None:
                         instruction = "Case invalide."
                     elif cell.bateau is None:
-                        instruction = "Choisissez d'abord un navire sur votre grille."
+                        instruction = "Choisissez d'abord un de vos navires."
                     else:
                         selected_ship_name = cell.bateau.nom
                         instruction = f"{selected_ship_name} selectionne. Cliquez sur N, S, E ou O."
-                elif turn_mode == ActionTour.Deplacer:
+
+                elif my_turn and turn_mode == ActionTour.Deplacer:
                     direction = None
                     for button_name in ("north", "south", "east", "west"):
                         if net_buttons[button_name].clicked(pos):
-                            direction = main_module.direction_from_button(button_name)
+                            direction = direction_from_button(button_name)
                             break
                     if direction is not None:
                         if selected_ship_name is None:
-                            instruction = "Selectionnez d'abord un navire a deplacer."
+                            instruction = "Selectionnez d'abord un navire."
                         else:
-                            ship = main_module.get_ship_by_name(game_ship_group, selected_ship_name)
+                            ship = get_ship_by_name(game_ship_group, selected_ship_name)
                             if ship is None:
                                 selected_ship_name = None
                                 instruction = "Navire introuvable."
                             else:
-                                resultat, move_error = main_module.safe_move_ship(joueur1, ship, direction)
+                                resultat, move_error = safe_move_ship(joueur1, ship, direction)
                                 selected_ship_name = None
                                 turn_mode = ActionTour.Tirer
                                 if resultat == ResultatDeplacement.DEPLACE:
-                                    instruction = f"{ship.nom} deplace d'une case. Tour adverse."
-                                    my_turn = False
+                                    move_used_this_turn = True
+                                    same_player = partie.jouerTour(None)
+                                    if same_player:
+                                        instruction = f"{ship.nom} deplace. Vous pouvez encore tirer. Tours : {partie.ToursResatants}."
+                                    else:
+                                        move_used_this_turn = False
+                                        reseau.envoyer("PASS")
+                                        my_turn = False
+                                        instruction = "Navire deplace. Tour adverse."
                                 elif resultat == ResultatDeplacement.BLOQUE:
                                     instruction = "Deplacement bloque : navire deja touche."
                                 else:
-                                    instruction = move_error or "Deplacement invalide : collision, superposition ou sortie de grille."
+                                    instruction = move_error or "Deplacement invalide."
 
+        # --- TRAITEMENT DES MESSAGES RÉSEAU ---
         incoming = reseau.recevoir()
+        if incoming is None:
+            show_game_over("Adversaire déconnecté. Retour au menu.")
+            return
         if incoming:
             for line in incoming.strip().splitlines():
-                if not line:
+                if not line.strip():
                     continue
                 parts = line.strip().split()
+
                 if parts[0] == "TIR" and len(parts) == 3:
+                    # L'adversaire tire sur notre plateau
                     r, c = int(parts[1]), int(parts[2])
                     cible = joueur1.plateau.getCase(r, c)
                     if cible is None:
@@ -179,9 +263,11 @@ def run_network_game(reseau: ReseauLocal, mode: str, difficulty: str):
                             reseau.envoyer("GAME_OVER WIN")
                             show_game_over("Defaite !")
                             return
-                        my_turn = True
-                        instruction = "L'adversaire a joue. Votre tour."
+                        instruction = "L'adversaire a joue. En attente..."
+                        # Ne pas changer my_turn ici : on attend PASS ou REPLAY
+
                 elif parts[0] == "RESULT" and len(parts) == 4:
+                    # Résultat de notre tir sur l'adversaire
                     status = parse_response_result(parts[1])
                     r, c = int(parts[2]), int(parts[3])
                     target = enemy_plateau.getCase(r, c)
@@ -193,15 +279,40 @@ def run_network_game(reseau: ReseauLocal, mode: str, difficulty: str):
                         else:
                             target.etat = EtatCase.RATEE
                             hit_list.add(CellHit(asset_path("Sprites/miss.png"), target.rect.center))
-                    my_turn = False
-                    if status == ResultatTir.RATE:
-                        instruction = "Rate. Tour adverse."
-                    elif status == ResultatTir.TOUCHE:
-                        instruction = "Touche ! Tour adverse."
-                    elif status == ResultatTir.COULE:
-                        instruction = "Coule ! Tour adverse."
+
+                    if status in (ResultatTir.INVALIDE, ResultatTir.DEJA_TIRE):
+                        instruction = "Erreur de tir. Reessayez."
+                        # my_turn reste True, le joueur peut retirer
                     else:
-                        instruction = "Resultat invalide."
+                        # Règle de tours identique aux modes locaux
+                        same_player = partie.jouerTour(status)
+                        msg_tir = {
+                            ResultatTir.RATE: "Rate.",
+                            ResultatTir.TOUCHE: "Touche !",
+                            ResultatTir.COULE: "Coule !",
+                        }.get(status, ".")
+                        if same_player:
+                            reseau.envoyer("REPLAY")
+                            my_turn = True
+                            instruction = f"{msg_tir} Vous rejouez. Tours restants : {partie.ToursResatants}."
+                        else:
+                            reseau.envoyer("PASS")
+                            my_turn = False
+                            move_used_this_turn = False
+                            instruction = f"{msg_tir} Tour adverse."
+
+                elif parts[0] == "REPLAY":
+                    # L'adversaire a des tours bonus et continue
+                    instruction = "L'adversaire rejoue !"
+
+                elif parts[0] == "PASS":
+                    # L'adversaire a terminé son tour — c'est notre tour
+                    partie.joueurCourant = joueur1
+                    partie.demarrerTour()
+                    my_turn = True
+                    move_used_this_turn = False
+                    instruction = f"Votre tour ! Tours disponibles : {partie.ToursResatants}."
+
                 elif parts[0] == "GAME_OVER" and len(parts) > 1:
                     if parts[1] == "WIN":
                         show_game_over("Victoire !")
@@ -217,7 +328,9 @@ def run_network_game(reseau: ReseauLocal, mode: str, difficulty: str):
             net_buttons,
             instruction,
             turn_mode,
-            deplacement_alignement,
-            main_module.get_ship_by_name(game_ship_group, selected_ship_name) if selected_ship_name else None,
+            Alignement.Horizontal,
+            get_ship_by_name(game_ship_group, selected_ship_name) if selected_ship_name else None,
+            left_label="VOTRE GRILLE",
+            right_label="GRILLE ENNEMIE",
         )
         clock.tick(30)

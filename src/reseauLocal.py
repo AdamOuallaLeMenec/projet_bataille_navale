@@ -1,6 +1,19 @@
 import socket
 import threading
 
+
+def get_local_ip() -> str:
+    """Détecte l'adresse IP locale de la machine sur le LAN."""
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except Exception:
+        return "127.0.0.1"
+
+
 class ReseauLocal:
 
     def __init__(self):
@@ -34,7 +47,7 @@ class ReseauLocal:
     def rejoindre_partie(self, ip="127.0.0.1", port=5000):
         try:
             client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            client.settimeout(5)
+            client.settimeout(15)
             print("Tentative de connexion au serveur...")
             client.connect((ip, port))
             client.setblocking(False)
@@ -62,15 +75,24 @@ class ReseauLocal:
     # RECEVOIR MESSAGE
     # ------------------------
     def recevoir(self):
+        """
+        Retourne :
+          - str non vide  : message(s) reçu(s)
+          - ""            : aucune donnée disponible pour l'instant (normal)
+          - None          : connexion fermée ou erreur réseau (déconnexion)
+        """
         if self.connexion:
             try:
-                message = self.connexion.recv(1024).decode()
-                return message
+                data = self.connexion.recv(1024)
+                if data == b"":
+                    # TCP a fermé proprement la connexion
+                    return None
+                return data.decode()
             except BlockingIOError:
                 return ""
             except Exception:
-                return ""
-        return ""
+                return None
+        return None
 
     # ------------------------
     # ECOUTE CONTINUE
