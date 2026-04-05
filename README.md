@@ -33,4 +33,4 @@ Diagramme de classes
 - Draw.io & LucidChart: création des diagrammes UML
 - Git & GitHub : gestion de versions et collaboration
 - Visual Studio Code : environnement de travail
-
+- Python avec la bibliothèque Pygame : implémentation du jeu et de l’interface graphique
