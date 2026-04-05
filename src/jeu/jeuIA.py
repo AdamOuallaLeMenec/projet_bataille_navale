@@ -1,3 +1,5 @@
+import random
+
 import pygame
 from pygame.locals import QUIT, MOUSEBUTTONDOWN
 
@@ -203,9 +205,24 @@ def _apply_hit_to_enemy(player, enemy, cible, hit_list, m):
     return "Rate.", True, False, resultat
 
 
+def _try_ia_move(enemy, m):
+    """Déplace un bateau IA au hasard dans une direction aléatoire (tentative unique)."""
+    bateaux_vivants = [b for b in enemy.plateau.bateaux if b.getCasesOccupees()]
+    if not bateaux_vivants:
+        return
+    ship = random.choice(bateaux_vivants)
+    direction = random.choice(list(m.DirectionDeplacement))
+    m.safe_move_ship(enemy, ship, direction)
+
+
 def _enemy_take_turn(partie, enemy, player, hit_list, m):
     instruction = ""
+    ia_moved_this_turn = False
     while partie.joueurCourant == enemy:
+        move_chance = {"easy": 0.0, "hard": 0.4}.get(enemy.difficulty, 0.0)
+        if not ia_moved_this_turn and random.random() < move_chance:
+            _try_ia_move(enemy, m)
+            ia_moved_this_turn = True
         cible = enemy.choisirCibleIntelligente(player)
         resultat = enemy.tirer(player, cible)
         center = cible.rect.center
