@@ -4,6 +4,7 @@ from pathlib import Path
 from enum import Enum
 import itertools
 import random
+import socket
 import sys
 import threading
 import pygame
@@ -15,8 +16,9 @@ from joueurs.joueur import ActionTour, Joueur, JoueurHumain
 from navires.bateau import Alignement, Bateau, DirectionDeplacement
 from plateau.case import Case, EtatCase, ResultatTir
 from plateau.plateau import Plateau, ResultatDeplacement
-from reseauLocal import ReseauLocal
+from reseauLocal import ReseauLocal, get_local_ip
 from jeuLocal import run_network_game
+from jeu.jeuIA import run_ia_game
 
 reseau = ReseauLocal()
 
@@ -421,12 +423,28 @@ def run_main_menu():
     info = "Choisissez un mode et lancez la partie."
     clock = pygame.time.Clock()
     connection_thread = None
+    ip_input = ""
+    local_ip = get_local_ip()
 
     while True:
         for event in pygame.event.get():
             if event.type == QUIT:
                 pygame.quit()
                 sys.exit()
+            if event.type == pygame.KEYDOWN and mode == "join":
+                if event.key == pygame.K_BACKSPACE:
+                    ip_input = ip_input[:-1]
+                elif event.key in (pygame.K_RETURN, pygame.K_KP_ENTER):
+                    if ip_input.strip() and reseau.connexion is None:
+                        connection_thread = threading.Thread(
+                            target=reseau.rejoindre_partie,
+                            args=(ip_input.strip(), 5000),
+                            daemon=True,
+                        )
+                        connection_thread.start()
+                        info = f"Connexion à {ip_input.strip()}..."
+                elif len(ip_input) < 15 and (event.unicode.isdigit() or event.unicode == "."):
+                    ip_input += event.unicode
             if event.type == MOUSEBUTTONDOWN:
                 pos = event.pos
 
@@ -443,7 +461,8 @@ def run_main_menu():
                 # Choix des modes
                 elif buttons["create"].clicked(pos):
                     mode = "create"
-                    info = "Création de partie... En attente d'un joueur."
+                    ip_input = ""
+                    info = f"Votre IP : {local_ip} — Partagez-la à votre adversaire."
                     if reseau.connexion is None:
                         connection_thread = threading.Thread(target=reseau.creer_partie, kwargs={"port": 5000},
                                                              daemon=True)
@@ -451,11 +470,8 @@ def run_main_menu():
 
                 elif buttons["join"].clicked(pos):
                     mode = "join"
-                    info = "Recherche de la partie hôte..."
-                    if reseau.connexion is None:
-                        connection_thread = threading.Thread(target=reseau.rejoindre_partie, args=("127.0.0.1", 5000),
-                                                             daemon=True)
-                        connection_thread.start()
+                    ip_input = ""
+                    info = "Tapez l'IP de l'hôte puis Entrée (ou cliquez Lancer)."
 
                 elif buttons["ia"].clicked(pos):
                     mode = "ia"
@@ -472,7 +488,18 @@ def run_main_menu():
 
                 # Bouton START
                 elif buttons["start"].clicked(pos):
-                    if mode in ("create", "join") and reseau.connexion is None:
+                    if mode == "join" and reseau.connexion is None:
+                        if not ip_input.strip():
+                            info = "Saisissez d'abord l'adresse IP de l'hôte."
+                        elif connection_thread is None or not connection_thread.is_alive():
+                            connection_thread = threading.Thread(
+                                target=reseau.rejoindre_partie,
+                                args=(ip_input.strip(), 5000),
+                                daemon=True,
+                            )
+                            connection_thread.start()
+                            info = f"Connexion à {ip_input.strip()}..."
+                    elif mode == "create" and reseau.connexion is None:
                         info = "Patience... La connexion réseau n'est pas encore établie."
                     else:
                         return {"mode": mode, "difficulty": difficulty}
@@ -486,8 +513,12 @@ def run_main_menu():
             buttons["start"].text = "En attente..."
             buttons["start"].fill = GREY
         elif mode == "join":
-            buttons["start"].text = "Recherche..."
-            buttons["start"].fill = GREY
+            if connection_thread is not None and connection_thread.is_alive():
+                buttons["start"].text = "Connexion..."
+                buttons["start"].fill = GREY
+            else:
+                buttons["start"].text = "Lancer la partie"
+                buttons["start"].fill = GREEN if ip_input.strip() else LIGHT_GREY
         else:
             buttons["start"].text = "Lancer la partie"
             buttons["start"].fill = GREEN
@@ -503,6 +534,20 @@ def run_main_menu():
             active = (name == mode) or (name == difficulty)
             if name == "start": active = True
             btn.draw(active)
+
+        # Affichage IP : saisie pour "join", IP locale pour "create"
+        ip_box_rect = pygame.Rect(WINDOW_W // 2 + 60, 230, 240, 46)
+        if mode == "join":
+            pygame.draw.rect(window_surface, WHITE, ip_box_rect, border_radius=8)
+            pygame.draw.rect(window_surface, BLACK, ip_box_rect, 2, border_radius=8)
+            lbl = small_font.render("IP de l'hôte :", True, BLACK)
+            window_surface.blit(lbl, (ip_box_rect.x, ip_box_rect.y - 18))
+            cursor = "|" if (pygame.time.get_ticks() // 500) % 2 == 0 else " "
+            ip_surf = body_font.render(ip_input + cursor, True, BLACK)
+            window_surface.blit(ip_surf, ip_surf.get_rect(midleft=(ip_box_rect.x + 8, ip_box_rect.centery)))
+        elif mode == "create":
+            ip_surf = body_font.render(f"Votre IP : {local_ip}", True, GREEN)
+            window_surface.blit(ip_surf, ip_surf.get_rect(center=ip_box_rect.center))
 
         audio_logo.draw(window_surface)
 
@@ -1023,79 +1068,6 @@ def run_local_two_players():
         clock.tick(30)
 
 
-def apply_hit_to_enemy(player: JoueurHumain, enemy: JoueurVirtuel, cible: Case, hit_list, ship_group) -> tuple[
-    str, bool, bool, ResultatTir | None]:
-    resultat = player.tirer(enemy, cible)
-    center = cible.rect.center
-
-    if resultat == ResultatTir.DEJA_TIRE:
-        return "Cette case a deja ete visee.", False, False, None
-
-    if resultat in (ResultatTir.TOUCHE, ResultatTir.COULE):
-        hit_list.add(CellHit(asset_path("Sprites/hit.png"), center))
-        play_sound("sink" if resultat == ResultatTir.COULE else "hit")
-        if enemy.plateau.tousLesBateauxCoules():
-            return "Tous les navires ennemis sont coules. Victoire !", True, True, resultat
-        return ("Touche !" if resultat == ResultatTir.TOUCHE else "Coule !"), True, False, resultat
-
-    hit_list.add(CellHit(asset_path("Sprites/miss.png"), center))
-    play_sound("miss")
-    return "Rate.", True, False, resultat
-
-
-def enemy_take_turn(partie: Partie, enemy: JoueurVirtuel, player: JoueurHumain, hit_list) -> tuple[str, bool]:
-    instruction = ""
-    while partie.joueurCourant == enemy:
-        cible = enemy.choisirCibleIntelligente(player)
-        resultat = enemy.tirer(player, cible)
-        center = cible.rect.center
-
-        if resultat in (ResultatTir.TOUCHE, ResultatTir.COULE):
-            hit_list.add(CellHit(asset_path("Sprites/hit.png"), center))
-            if not enemy.derniereCaseTouchee:
-                enemy.derniereCaseTouchee = (cible.ligne, cible.colonne)
-            elif enemy.second_hit != (cible.ligne, cible.colonne):
-                enemy.second_hit = (cible.ligne, cible.colonne)
-
-            play_sound("sink" if resultat == ResultatTir.COULE else "hit")
-            instruction = f"L'ennemi a {'coule' if resultat == ResultatTir.COULE else 'touche'} un de vos navires. Il rejoue."
-
-            if resultat == ResultatTir.COULE:
-                enemy.reset_hit_logs()
-
-            if player.plateau.tousLesBateauxCoules():
-                return "Tous vos navires sont coules. Defaite !", True
-
-        else:
-            hit_list.add(CellHit(asset_path("Sprites/miss.png"), center))
-            play_sound("miss")
-            if enemy.derniereCaseTouchee and enemy.second_hit:
-                if not enemy.tested_no_hit:
-                    enemy.tested_no_hit = (cible.ligne, cible.colonne)
-                else:
-                    enemy.tested_no_hit_2 = (cible.ligne, cible.colonne)
-
-        same_player = partie.jouerTour(resultat)
-        if same_player:
-            instruction = f"L'ennemi continue. Tours restants IA: {partie.ToursResatants}."
-        else:
-            instruction = f"L'ennemi termine. A vous de jouer ({partie.ToursResatants} tours)."
-
-        refresh_screen(
-            player.plateau,
-            enemy.plateau,
-            pygame.sprite.Group(player.plateau.bateaux),
-            hit_list,
-            current_buttons,
-            instruction,
-            current_turn_mode[0],
-            current_alignement[0],
-        )
-        pygame.time.wait(800)
-
-    return instruction, False
-
-
 def show_game_over(text: str):
     window_surface.fill(GREY)
     draw_lines()
@@ -1139,200 +1111,10 @@ def main():
             run_local_two_players()
             continue
 
-        player_plateau = Plateau(PLAYER_GRID_X, GRID_Y)
-        enemy_plateau = Plateau(ENEMY_GRID_X, GRID_Y)
-
-        joueur1 = JoueurHumain("Joueur", player_plateau)
-        joueur2 = JoueurVirtuel("IA", enemy_plateau, difficulty=menu_choice["difficulty"])
-
-        fleet_counts_player, fleet_counts_enemy = generate_balanced_fleet_pair()
-        fleet_spec_player = build_fleet_spec(fleet_counts_player)
-        fleet_spec_enemy = build_fleet_spec(fleet_counts_enemy)
-
-        partie = Partie(joueur1, joueur2)
-        partie.demarrer()
-
-        ship_group = create_fleet_sprites(fleet_spec_player)
-        enemy_ships = create_enemy_fleet(fleet_spec_enemy)
-        joueur2.plateau.bateaux = enemy_ships
-        try:
-            joueur2.randomise_ships()
-        except RuntimeError:
-            # Cas rare de saturation d'essais: on relance la configuration de partie.
-            continue
-
-        hit_list = pygame.sprite.Group()
-
-        if not set_up_player_ships(joueur1, joueur2, ship_group, hit_list):
-            continue
-
-        joueur1.plateau.bateaux = list(ship_group)
-        partie.demarrerTour()
-        game_ship_group = pygame.sprite.Group(joueur1.plateau.bateaux)
-
-        buttons = setup_buttons()
-        global current_buttons
-        current_buttons = {k: v for k, v in buttons.items() if
-               k in ["menu", "action_tir", "action_move", "north", "south", "east", "west"]}
-
-        turn_mode = ActionTour.Tirer
-        alignement_move = Alignement.Horizontal
-        current_turn_mode[0] = turn_mode
-        current_alignement[0] = alignement_move
-
-        selected_ship_name = None
-        move_used_this_turn = False
-        instruction = "Votre tour : tirez sur la grille ennemie ou choisissez Deplacement."
-        clock = pygame.time.Clock()
-
-        playing = True
-        while playing:
-            for event in pygame.event.get():
-                if event.type == QUIT:
-                    pygame.quit()
-                    sys.exit()
-
-                if event.type == MOUSEBUTTONDOWN:
-                    pos = event.pos
-
-                    if current_buttons["menu"].clicked(pos):
-                        playing = False
-                        break
-
-                    elif "rotate" in current_buttons and current_buttons["rotate"].clicked(pos):
-                        if turn_mode == ActionTour.Deplacer and selected_ship_name:
-                            ship = get_ship_by_name(game_ship_group, selected_ship_name)
-                            if ship:
-                                new_align = Alignement.Vertical if ship.alignement == Alignement.Horizontal else Alignement.Horizontal
-                                ship.orienter(new_align)
-                                anchor_case = ship.getCasesOccupees()[0] if ship.getCasesOccupees() else None
-                                if anchor_case:
-                                    cases = joueur1.plateau.calculer_cases_pour_bateau(ship, anchor_case.ligne,
-                                                                                       anchor_case.colonne, new_align)
-                                    if cases and joueur1.plateau.placementValide(ship, cases):
-                                        joueur1.plateau.placerBateau(ship, cases)
-                                        instruction = f"{ship.nom} pivote en {new_align.value}."
-                                    else:
-                                        ship.orienter(
-                                            Alignement.Horizontal if new_align == Alignement.Vertical else Alignement.Vertical)
-                                        instruction = "Rotation impossible ici."
-
-                    elif current_buttons["action_tir"].clicked(pos):
-                        turn_mode = ActionTour.Tirer
-                        current_turn_mode[0] = turn_mode
-                        selected_ship_name = None
-                        instruction = "Mode tir actif. Cliquez sur la grille ennemie."
-
-                    elif current_buttons["action_move"].clicked(pos):
-                        if move_used_this_turn:
-                            turn_mode = ActionTour.Tirer
-                            current_turn_mode[0] = turn_mode
-                            selected_ship_name = None
-                            instruction = "Deplacement deja utilise pour ce tour. Il vous reste seulement des tirs."
-                        else:
-                            turn_mode = ActionTour.Deplacer
-                            current_turn_mode[0] = turn_mode
-                            instruction = "Mode deplacement actif : choisissez un navire puis cliquez sur N, S, E ou O."
-
-                    elif turn_mode == ActionTour.Tirer and enemy_plateau.rect.collidepoint(pos):
-                        cell = enemy_plateau.get_cell_from_pixel(*pos)
-                        if cell is not None:
-                            instruction, consumed_action, finished, tir_result = apply_hit_to_enemy(
-                                joueur1, joueur2, cell, hit_list, game_ship_group
-                            )
-                            if finished:
-                                refresh_screen(joueur1.plateau, joueur2.plateau, game_ship_group, hit_list,
-                                               current_buttons, instruction, turn_mode, alignement_move)
-                                pygame.time.wait(1200)
-                                partie.determinerVainqueur()
-                                winner_name = partie.Vainqueur.nom if partie.Vainqueur else joueur1.nom
-                                show_game_over(f"Vainqueur : {winner_name}")
-                                playing = False
-                                break
-
-                            if consumed_action:
-                                defeat = False
-                                same_player = partie.jouerTour(tir_result)
-                                if same_player:
-                                    instruction = f"{instruction} Tours restants: {partie.ToursResatants}."
-                                else:
-                                    move_used_this_turn = False
-                                    instruction, defeat = enemy_take_turn(partie, joueur2, joueur1, hit_list)
-                                if defeat:
-                                    refresh_screen(joueur1.plateau, joueur2.plateau, game_ship_group, hit_list,
-                                                   current_buttons, instruction, turn_mode, alignement_move)
-                                    pygame.time.wait(1200)
-                                    partie.determinerVainqueur()
-                                    winner_name = partie.Vainqueur.nom if partie.Vainqueur else joueur2.nom
-                                    show_game_over(f"Vainqueur : {winner_name}")
-                                    playing = False
-                                    break
-
-                    elif turn_mode == ActionTour.Deplacer and player_plateau.rect.collidepoint(pos):
-                        cell = player_plateau.get_cell_from_pixel(*pos)
-                        if cell is None:
-                            instruction = "Case invalide."
-                        elif cell.bateau is None:
-                            instruction = "Choisissez d'abord un de vos navires."
-                        else:
-                            selected_ship_name = cell.bateau.nom
-                            instruction = f"{selected_ship_name} selectionne. Cliquez sur N, S, E ou O."
-
-                    elif turn_mode == ActionTour.Deplacer:
-                        direction = None
-                        for button_name in ("north", "south", "east", "west"):
-                            if current_buttons[button_name].clicked(pos):
-                                direction = direction_from_button(button_name)
-                                break
-                        if direction is not None:
-                            if selected_ship_name is None:
-                                instruction = "Selectionnez d'abord un navire a deplacer."
-                            else:
-                                ship = get_ship_by_name(game_ship_group, selected_ship_name)
-                                if ship is None:
-                                    selected_ship_name = None
-                                    instruction = "Navire introuvable."
-                                else:
-                                    resultat, move_error = safe_move_ship(joueur1, ship, direction)
-                                    selected_ship_name = None
-                                    turn_mode = ActionTour.Tirer
-                                    current_turn_mode[0] = turn_mode
-                                    if resultat == ResultatDeplacement.DEPLACE:
-                                        move_used_this_turn = True
-                                        defeat = False
-                                        same_player = partie.jouerTour(None)
-                                        if same_player:
-                                            instruction = f"{ship.nom} deplace d'une case. Vous pouvez encore tirer. Tours restants: {partie.ToursResatants}."
-                                        else:
-                                            move_used_this_turn = False
-                                            instruction, defeat = enemy_take_turn(partie, joueur2, joueur1, hit_list)
-                                        if defeat:
-                                            refresh_screen(joueur1.plateau, joueur2.plateau, game_ship_group, hit_list,
-                                                           current_buttons, instruction, turn_mode, alignement_move)
-                                            pygame.time.wait(1200)
-                                            partie.determinerVainqueur()
-                                            winner_name = partie.Vainqueur.nom if partie.Vainqueur else joueur2.nom
-                                            show_game_over(f"Vainqueur : {winner_name}")
-                                            playing = False
-                                            break
-                                    elif resultat == ResultatDeplacement.BLOQUE:
-                                        instruction = "Deplacement bloque : navire deja touche."
-                                    else:
-                                        instruction = move_error or "Deplacement invalide : collision, superposition ou sortie de grille."
-
-            selected_ship = get_ship_by_name(game_ship_group, selected_ship_name) if selected_ship_name else None
-            refresh_screen(
-                joueur1.plateau,
-                joueur2.plateau,
-                game_ship_group,
-                hit_list,
-                current_buttons,
-                instruction,
-                turn_mode,
-                alignement_move,
-                selected_ship,
-            )
-            clock.tick(30)
+        # Mode IA — délégué à jeu/jeuIA.py
+        ok = run_ia_game(menu_choice["difficulty"])
+        if not ok:
+            continue  # placement impossible, on relance
 
 
 if __name__ == "__main__":
