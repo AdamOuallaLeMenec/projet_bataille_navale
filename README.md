@@ -1,36 +1,102 @@
-# projet_bataille_navale
+﻿# Bataille Navale
 
-Ce projet a pour objectif de concevoir et de modéliser une version modifiée du jeu de société Bataille Navale. Le jeu doit permettre de jouer à deux joueurs ou contre un adversaire virtuel (IA), en respectant un ensemble de règles définies concernant le plateau de jeu, la disposition des navires et le déroulement des tours. 
+Version modifiée du jeu de société Bataille Navale, développée en Python avec Pygame. Le jeu propose plusieurs modes de jeu, une IA avec deux niveaux de difficulté, et un mode réseau en local.
 
-Chaque joueur dispose d’un plateau composé de cases identifiées par des coordonnées. Les navires sont placés de manière secrète et doivent respecter des contraintes de positionnement. À chaque tour, le joueur peut effectuer une action: 
-- soit tirer sur une case adverse.
-- soit déplacer l’un de ses navires.
+---
 
-Le jeu se poursuit jusqu’à ce que l’ensemble des navires d’un joueur soit détruit. Les joueurs ont droit a des tours supplémentaires sous certaines conditions. 
+## Modes de jeu
 
-Ce projet a été réalisé en groupe de quatre personnes, avec une répartition des tâches décrite dans le rapport associé. 
+- **Joueur vs IA** — difficulté facile ou difficile
+- **2 joueurs local** — sur le même écran, à tour de rôle
+- **2 joueurs réseau (LAN)** — via le réseau local, hôte ou client
 
-*Diagrammes UML* 
+---
 
-Le projet s’appuie sur plusieurs diagrammes UML pour modéliser le système : 
+## Règles
 
-Diagramme de cas d’utilisation 
+Chaque joueur dispose d'un plateau de 22×22 cases. Les navires sont placés secrètement avant la partie et doivent respecter des contraintes d'espacement. À chaque tour, le joueur peut :
+- **Tirer** sur une case adverse (un tir par tour minimum)
+- **Déplacer** l'un de ses navires d'une case (une seule fois par tour)
 
-Diagrammes de séquence :
-- Tir sur une case adverse
-- Règles de validité du plateau
-- Réception d’un tir
-- Parcours d’une IA
-  
-Diagramme d’activité : 
-- déroulement d’une partie
-- configuration de la partie
-  
-Diagramme de classes 
+La partie se termine quand tous les navires d'un camp sont coulés.
 
-*Outils utilisés:*
+**Tours supplémentaires** : si le joueur possède un porte-avions vivant, il reçoit des tours bonus selon le nombre de navires restants. Couler un navire ennemi accorde également un tour supplémentaire.
 
-- Draw.io & LucidChart: création des diagrammes UML
-- Git & GitHub : gestion de versions et collaboration
-- Visual Studio Code : environnement de travail
-- Python avec la bibliothèque Pygame : implémentation du jeu et de l’interface graphique
+---
+
+## Navires disponibles
+
+| Navire | Taille |
+|---|---|
+| Porte-avion | 5 |
+| Cuirassé | 4 |
+| Sous-marin | 3 |
+| Destroyer | 3 |
+| Patrouilleur | 2 |
+
+La composition de la flotte est générée aléatoirement et est identique pour les deux joueurs.
+
+---
+
+## Lancer le jeu
+
+```bash
+cd src
+python main.py
+```
+
+**Prérequis** : Python 3.10+ et Pygame (`pip install pygame`)
+
+---
+
+## Mode réseau
+
+1. Le joueur hôte clique sur **Créer une partie** — son IP locale est affichée à l'écran
+2. Le joueur client clique sur **Rejoindre une partie**, saisit l'IP de l'hôte et appuie sur Entrée
+3. Une fois la connexion établie, cliquer sur **Lancer la partie**
+
+Les deux joueurs doivent être sur le même réseau local. Port utilisé : **5000**.
+
+---
+
+## Structure du projet
+
+```
+src/
+├── main.py              # Point d'entrée, UI, menus
+├── jeuLocal.py          # Boucle de jeu réseau LAN
+├── reseauLocal.py       # Couche socket TCP
+├── jeu/
+│   ├── jeuIA.py         # Boucle de jeu joueur vs IA
+│   └── fin_partie.py    # Gestion des tours et victoire
+├── joueurs/
+│   ├── joueur.py        # Classes Joueur et JoueurHumain
+│   └── ia.py            # IA (JoueurVirtuel)
+├── navires/
+│   └── bateau.py        # Classe Bateau
+├── plateau/
+│   ├── plateau.py       # Grille, placement, déplacement
+│   └── case.py          # Case individuelle
+├── Sprites/             # Images des navires et marqueurs
+├── Sounds/              # Musiques
+└── Fonts/               # Polices
+Diagrammes/              # Diagrammes UML
+```
+
+---
+
+## Diagrammes UML
+
+- Diagramme de cas d'utilisation
+- Diagramme de classes
+- Diagrammes de séquence : tir, réception d'un tir, validité du plateau, parcours IA
+- Diagrammes d'activité : déroulement d'une partie, configuration
+
+---
+
+## Outils utilisés
+
+- **Python + Pygame** — implémentation et interface graphique
+- **Git & GitHub** — gestion de versions et collaboration
+- **Visual Studio Code** — environnement de développement
+- **Draw.io & LucidChart** — création des diagrammes UML
