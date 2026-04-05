@@ -1,0 +1,74 @@
+Répartition des Tâches — Projet Bataille Navale
+===============================================
+Université Évry Paris-Saclay — L3 MIAGE Formation Initiale — 2025-2026
+Encadrant : Guillaume Béduneau
+
+MEMBRES DU GROUPE
+-----------------
+  Aicha Tahar Bellar         N° 20231526
+  Zakarya Zouhir             N° 20232983
+  Adam Oualla Le Menec       N° 20230456
+  Marwa Bourakkadi Idrissi   N° 20226586
+
+======================================================================
+1. AFFECTATION INITIALE (Responsabilité principale)
+======================================================================
+
+  Aicha Tahar Bellar       — Gestion des tours, tours supplémentaires,
+                             détection fin de partie
+
+  Zakarya Zouhir           — IA, coordination de la partie, mode réseau local
+
+  Adam Oualla Le Menec     — Gestion du plateau, placement et validation
+                             des navires
+
+  Marwa Bourakkadi Idrissi — Tirs, déplacement des navires,
+                             affichage des messages
+
+======================================================================
+2. AFFECTATION DÉTAILLÉE DES TÂCHES
+======================================================================
+
+Membre                   | Diagrammes UML                              | Développement
+-------------------------|---------------------------------------------|--------------------------------------------------
+Adam Oualla Le Menec     | Séquence « Validité plateau »               | Gestion plateau 22×22, placement navires avec
+                         | Séquence « Parcours IA »                    | validation espacement, marquage cases
+-------------------------|---------------------------------------------|--------------------------------------------------
+Aicha Tahar Bellar       | Activité « Configuration de la partie »     | Tours (base + bonus), suivi joueur courant,
+                         |                                             | détection fin de partie, vainqueur
+-------------------------|---------------------------------------------|--------------------------------------------------
+Zakarya Zouhir           | Séquence « Réception d'un tir »             | IA (stratégie aléatoire et ciblée),
+                         | Séquence « Tir adverse »                    | coordination partie, gestion réseau (sockets)
+-------------------------|---------------------------------------------|--------------------------------------------------
+Marwa Bourakkadi Idrissi | Diagramme de classes                        | Tirs (touché/coulé/raté), déplacement navires,
+                         | Activité « Déroulement »                    | messages affichage (message.py)
+
+======================================================================
+3. PLANNING DE RÉALISATION
+======================================================================
+
+  Semaine 1      — Analyse et initialisation
+                   Analyse du sujet, répartition des tâches, création GitHub,
+                   diagramme de cas d'utilisation
+
+  Semaines 2-3   — Modélisation UML
+                   Diagrammes de séquence, d'activité, de classes ;
+                   tableaux de spécifications ; corrections en TD
+
+  Semaine 4      — Finalisation modélisation
+                   Révision et cohérence des diagrammes, correction README,
+                   rapport phase 1
+
+  Semaines 5-7   — Développement — noyau
+                   Plateau, placement navires, logique tirs, déplacements,
+                   affichage Pygame
+
+  Semaines 8-12  — Développement avancé
+                   IA (facile/difficile), réseau local (sockets), sons,
+                   sprites, tours supplémentaires
+
+  Semaines 13-14 — Tests et livraison
+                   Tests, correction bugs, rapport final, journal Git,
+                   nettoyage dépôt
+
+======================================================================
