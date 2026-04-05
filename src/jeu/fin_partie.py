@@ -7,7 +7,7 @@ class Partie:
         self.joueur1 = joueur1
         self.joueur2 = joueur2
         self.joueurCourant = joueur1
-        self.ToursResatants = 1
+        self.ToursRestants = 1
         self.Vainqueur = None
 
     def initialiser(self):
@@ -18,7 +18,7 @@ class Partie:
         self.initialiser()
 
     def demarrerTour(self):
-        self.ToursResatants = self.calculerToursInitials(self.joueurCourant)
+        self.ToursRestants = self.calculerToursInitials(self.joueurCourant)
 
     def jouerTour(self, resultat_tir: ResultatTir | None = None) -> bool:
         """
@@ -30,13 +30,13 @@ class Partie:
         if resultat_tir == ResultatTir.COULE:
             self.accorderTourSupplementaire()
 
-        self.ToursResatants -= 1
+        self.ToursRestants -= 1
 
         if self.estTerminee():
             self.determinerVainqueur()
             return False
 
-        if self.ToursResatants > 0:
+        if self.ToursRestants > 0:
             return True
 
         self.passerAuJoueurSuivant()
@@ -57,7 +57,7 @@ class Partie:
         return plateau.compterNaviresVivantsHorsPatrouilleurs()
 
     def accorderTourSupplementaire(self) -> None:
-        self.ToursResatants += 1
+        self.ToursRestants += 1
 
     def passerAuJoueurSuivant(self):
         self.joueurCourant = self.joueur2 if self.joueurCourant == self.joueur1 else self.joueur1

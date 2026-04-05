@@ -9,7 +9,6 @@ import sys
 import threading
 import pygame
 from pygame.locals import QUIT, MOUSEBUTTONDOWN
-#
 from jeu.fin_partie import Partie
 from joueurs.ia import JoueurVirtuel
 from joueurs.joueur import ActionTour, Joueur, JoueurHumain
@@ -125,7 +124,6 @@ body_font = pygame.font.SysFont(None, 26)
 small_font = pygame.font.SysFont(None, 20)
 button_font = pygame.font.SysFont(None, 24)
 menu_font = pygame.font.SysFont(None, 36)
-label_font = pygame.font.SysFont(None, 14)
 
 
 
@@ -158,7 +156,6 @@ class TextButton:
         return self.rect.collidepoint(pos)
 
 
-# NOUVELLE CLASSE : Bouton Logo pour le Son
 class AudioToggleButton:
     def __init__(self, x: int, y: int, size=40):
         # x et y représentent le coin supérieur droit
@@ -206,10 +203,6 @@ def display_headers(turn_mode: ActionTour, alignement: Alignement, left_label="G
     window_surface.blit(player_text, player_text.get_rect(center=(player_center_x, 132)))
     window_surface.blit(enemy_text, enemy_text.get_rect(center=(enemy_center_x, 132)))
     window_surface.blit(mode_text, mode_text.get_rect(center=(WINDOW_W // 2, 100)))
-
-
-def display_grid_footers(player_remaining: int | None = None, enemy_remaining: int | None = None):
-    return
 
 
 def display_instruction(text, color=WHITE):
@@ -312,7 +305,6 @@ def refresh_screen(player_plateau, enemy_plateau, ship_list, hit_list, buttons, 
         overlay.fill((15, 15, 15, 120))
         window_surface.blit(overlay, enemy_plateau.rect.topleft)
 
-    display_grid_footers()
     display_instruction(instruction)
     pygame.display.update()
 
@@ -397,7 +389,6 @@ def setup_menu_buttons():
         "ia": TextButton("ia", "Jouer contre l'IA", center_x - 360, 380, 320, 58),
         "local2": TextButton("local2", "Jouer à 2 (local)", center_x - 360, 455, 320, 58),
 
-      #  "random": TextButton("random", "IA aléatoire", 740, 255, 230, 54),
         "easy": TextButton("easy", "IA facile", center_x + 60, 305, 230, 54),
         "hard": TextButton("hard", "IA difficile", center_x + 60, 375, 230, 54),
 
@@ -448,7 +439,6 @@ def run_main_menu():
             if event.type == MOUSEBUTTONDOWN:
                 pos = event.pos
 
-                # Gestion Audio
                 if audio_logo.clicked(pos):
                     global SOUND_ENABLED, MUSIC_ENABLED
                     SOUND_ENABLED = not SOUND_ENABLED
@@ -458,7 +448,6 @@ def run_main_menu():
                     else:
                         pygame.mixer.music.pause()
 
-                # Choix des modes
                 elif buttons["create"].clicked(pos):
                     mode = "create"
                     ip_input = ""
@@ -481,12 +470,9 @@ def run_main_menu():
                     info = "Mode local à 2 joueurs sélectionné."
                 elif buttons["easy"].clicked(pos):
                     difficulty = "easy"
-               # elif buttons["random"].clicked(pos):
-                  #  difficulty = "random"
                 elif buttons["hard"].clicked(pos):
                     difficulty = "hard"
 
-                # Bouton START
                 elif buttons["start"].clicked(pos):
                     if mode == "join" and reseau.connexion is None:
                         if not ip_input.strip():
@@ -504,7 +490,6 @@ def run_main_menu():
                     else:
                         return {"mode": mode, "difficulty": difficulty}
 
-        # --- MISE A JOUR VISUELLE DU BOUTON START ---
         if reseau.connexion is not None:
             info = "Connexion établie ! Cliquez sur Lancer."
             buttons["start"].text = "Lancer la partie"
@@ -523,7 +508,6 @@ def run_main_menu():
             buttons["start"].text = "Lancer la partie"
             buttons["start"].fill = GREEN
 
-        # Dessin de l'interface
         window_surface.fill(GREY)
         draw_lines()
         draw_centered_text("Bataille Navale", menu_title_font, 95)
@@ -535,7 +519,6 @@ def run_main_menu():
             if name == "start": active = True
             btn.draw(active)
 
-        # Affichage IP : saisie pour "join", IP locale pour "create"
         ip_box_rect = pygame.Rect(WINDOW_W // 2 + 60, 230, 240, 46)
         if mode == "join":
             pygame.draw.rect(window_surface, WHITE, ip_box_rect, border_radius=8)
@@ -990,7 +973,7 @@ def run_local_two_players():
                         if consumed_action:
                             same_player = partie.jouerTour(tir_result)
                             if same_player:
-                                instruction = f"{instruction} Tours restants: {partie.ToursResatants}."
+                                instruction = f"{instruction} Tours restants: {partie.ToursRestants}."
                             else:
                                 current_player = partie.joueurCourant
                                 enemy_player = joueur2 if current_player == joueur1 else joueur1
@@ -1001,7 +984,7 @@ def run_local_two_players():
                                 current_alignement[0] = alignement_move
                                 move_used_this_turn = False
                                 show_turn_transition(current_player.nom)
-                                instruction = f"Tour de {current_player.nom}. Tours: {partie.ToursResatants}."
+                                instruction = f"Tour de {current_player.nom}. Tours: {partie.ToursRestants}."
 
                 elif turn_mode == ActionTour.Deplacer and current_player.plateau.rect.collidepoint(pos):
                     cell = current_player.plateau.get_cell_from_pixel(*pos)
@@ -1038,13 +1021,13 @@ def run_local_two_players():
                                     alignement_move = Alignement.Horizontal
                                     current_alignement[0] = alignement_move
                                     if same_player:
-                                        instruction = f"{ship.nom} deplace d'une case. Vous pouvez encore tirer. Tours restants: {partie.ToursResatants}."
+                                        instruction = f"{ship.nom} deplace d'une case. Vous pouvez encore tirer. Tours restants: {partie.ToursRestants}."
                                     else:
                                         current_player = partie.joueurCourant
                                         enemy_player = joueur2 if current_player == joueur1 else joueur1
                                         move_used_this_turn = False
                                         show_turn_transition(current_player.nom)
-                                        instruction = f"Tour de {current_player.nom}. Tours: {partie.ToursResatants}."
+                                        instruction = f"Tour de {current_player.nom}. Tours: {partie.ToursRestants}."
                                 elif resultat == ResultatDeplacement.BLOQUE:
                                     instruction = "Deplacement bloque : navire deja touche."
                                 else:

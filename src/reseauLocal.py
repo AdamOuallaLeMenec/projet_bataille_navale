@@ -1,5 +1,4 @@
 import socket
-import threading
 
 
 def get_local_ip() -> str:
@@ -83,7 +82,7 @@ class ReseauLocal:
         """
         if self.connexion:
             try:
-                data = self.connexion.recv(1024)
+                data = self.connexion.recv(4096)
                 if data == b"":
                     # TCP a fermé proprement la connexion
                     return None
@@ -94,20 +93,3 @@ class ReseauLocal:
                 return None
         return None
 
-    # ------------------------
-    # ECOUTE CONTINUE
-    # ------------------------
-    def ecouter(self, callback):
-        def boucle():
-            while True:
-                try:
-                    if self.connexion is None:
-                        continue
-                    message = self.connexion.recv(1024).decode()
-                    if message:
-                        callback(message)
-                except Exception:
-                    break
-
-        thread = threading.Thread(target=boucle, daemon=True)
-        thread.start()
