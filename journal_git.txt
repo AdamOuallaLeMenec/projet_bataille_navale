@@ -1,0 +1,231 @@
+﻿Journal GIT - Projet Bataille Navale
+=====================================
+Équipe  : AICHA TAHARBELLAR (Aicha), marwaidrissi (Marwa), AdamOuallaLeMenec (Adam), zakou77 (Zakarya)
+Dépôt   : https://github.com/AICHA TAHARBELLAR/projet_bataille_navale
+Branche : main
+
+Format  : DATE       HEURE | HASH    | AUTEUR              | MESSAGE
+----------------------------------------------------------------------
+
+--- 05/04/2026 ---
+05/04/2026 20:06 | b0cfb81 | AICHA TAHARBELLAR   | mise a jour du README
+05/04/2026 19:59 | 783dd1a | AICHA TAHARBELLAR   | Merge pull request #27 from AICHA TAHARBELLAR/correctionsFinales
+05/04/2026 19:58 | 4180ad8 | AICHA TAHARBELLAR   | corrections finales
+05/04/2026 19:41 | d4c4f0e | marwaidrissi        | Add Python and Pygame to README for game implementation
+05/04/2026 19:30 | 7164eb3 | AICHA TAHARBELLAR   | deplacement des bateaux par l'ia
+05/04/2026 19:22 | c5004de | AICHA TAHARBELLAR   | Merge branch 'main' of https://github.com/AICHA TAHARBELLAR/projet_bataille_navale
+05/04/2026 19:20 | 0a8c94e | AICHA TAHARBELLAR   | retirer les pycache du suivi git
+05/04/2026 19:18 | b1fe561 | AICHA TAHARBELLAR   | Merge pull request #26 from AICHA TAHARBELLAR/reseau-lan
+05/04/2026 19:16 | 6bc8937 | AICHA TAHARBELLAR   | rectification mode reseau local
+05/04/2026 17:03 | 4df0919 | marwaidrissi        | Add files via upload
+05/04/2026 17:02 | f06b045 | marwaidrissi        | Delete projet_bataille_navale.pdf
+
+--- 04/04/2026 ---
+04/04/2026 21:19 | 6abb5d2 | marwaidrissi        | Merge pull request #25 from AICHA TAHARBELLAR/marwa2
+04/04/2026 21:18 | 62e6cac | marwaidrissi        | Add files via upload
+04/04/2026 21:17 | 822f723 | marwaidrissi        | Delete src directory
+04/04/2026 21:07 | ee38456 | marwaidrissi        | Merge pull request #24 from AICHA TAHARBELLAR/marwa2
+04/04/2026 21:05 | a86ea8c | marwaidrissi        | Add files via upload
+04/04/2026 21:04 | b8d637a | marwaidrissi        | Delete src directory
+04/04/2026 20:25 | 927ca55 | marwaidrissi        | Merge pull request #23 from AICHA TAHARBELLAR/marwa2
+04/04/2026 20:24 | 32c4638 | marwaidrissi        | Add files via upload
+04/04/2026 20:23 | a5737f2 | marwaidrissi        | Delete src
+04/04/2026 20:21 | aa243c0 | marwaidrissi        | Create src
+04/04/2026 20:21 | b3fd683 | marwaidrissi        | Delete src directory
+04/04/2026 20:19 | fce6154 | marwaidrissi        | Delete src/Sounds directory
+04/04/2026 20:19 | 9c3f1b4 | marwaidrissi        | Delete src/Fonts directory
+
+--- 01/04/2026 ---
+01/04/2026 21:16 | 811960d | AICHA TAHARBELLAR   | correction et amélioration jouer a 2 en local
+01/04/2026 20:53 | 51af084 | AICHA TAHARBELLAR   | taille des plateaux arrangés
+01/04/2026 20:50 | 72e5a24 | AICHA TAHARBELLAR   | arranger la taille des bateaux
+01/04/2026 20:47 | afc8f9e | AICHA TAHARBELLAR   | fix: retirer CELL_SIZE inutilisé pour bateaux
+01/04/2026 20:41 | a0d492a | AICHA TAHARBELLAR   | remove __pycache__ from tracking
+01/04/2026 20:36 | 8be4496 | AICHA TAHARBELLAR   | ajustement bateaux
+01/04/2026 20:30 | 7e76c32 | AICHA TAHARBELLAR   | bateaux colonne centrale + bouton rotation plus bas
+01/04/2026 20:27 | eddbefc | AICHA TAHARBELLAR   | version avec 26*26 grilles
+
+--- 30/03/2026 ---
+30/03/2026 13:37 | 3c96298 | AICHA TAHARBELLAR   | réduction fenêtre: 1920 -> 1200px pour grille 26x26
+30/03/2026 13:28 | 966f407 | AICHA TAHARBELLAR   | grille 26x26 au lieu de 26x40
+30/03/2026 13:18 | a93f120 | AICHA TAHARBELLAR   | commit
+30/03/2026 13:10 | 0c3be82 | AICHA TAHARBELLAR   | wip: reprise generation aleatoire et verifications
+30/03/2026 01:02 | 53badc2 | AICHA TAHARBELLAR   | fix taille des bateaux: retirer le rescaling forcé d'aicha2
+30/03/2026 00:47 | 003b414 | AICHA TAHARBELLAR   | retirer le niveau ia moyen
+30/03/2026 00:40 | bc83c9e | AICHA TAHARBELLAR   | remise de la grille comme avant
+
+--- 29/03/2026 ---
+29/03/2026 01:14 | 15c830a | AICHA TAHARBELLAR   | Merge branch 'aicha2'
+29/03/2026 01:14 | 8a914a6 | AICHA TAHARBELLAR   | ajustements visuels et grille
+29/03/2026 00:55 | 8188e2f | AICHA TAHARBELLAR   | mise à jour gitignore
+29/03/2026 00:52 | 3a06194 | AICHA TAHARBELLAR   | Merge branch 'aicha2'
+29/03/2026 00:52 | c0820c0 | AICHA TAHARBELLAR   | ajout tours supplémentaires
+
+--- 28/03/2026 ---
+28/03/2026 23:53 | 15485f1 | AICHA TAHARBELLAR   | Merge branch 'aicha2' into main
+28/03/2026 23:52 | 860164a | AICHA TAHARBELLAR   | modification boutons
+28/03/2026 22:37 | 13b0a3b | AICHA TAHARBELLAR   | arranger la grille
+28/03/2026 18:03 | e094fb3 | AdamOuallaLeMenec   | Merge pull request #21 from AdamOuallaLeMenec/main
+28/03/2026 17:50 | 970e871 | AICHA TAHARBELLAR   | correction code en double
+28/03/2026 17:22 | e1e22d9 | AdamOuallaLeMenec   | Update main.py
+28/03/2026 15:56 | dfdca32 | AdamOuallaLeMenec   | Update main.py
+28/03/2026 15:28 | 38d2ae1 | AdamOuallaLeMenec   | Update main.py
+
+--- 27/03/2026 ---
+27/03/2026 20:04 | 54a5145 | AdamOuallaLeMenec   | Merge pull request #20 from AdamOuallaLeMenec/main
+27/03/2026 20:02 | 8fb60fe | AdamOuallaLeMenec   | Merge branch 'AICHA TAHARBELLAR:main' into main
+27/03/2026 20:02 | b4fcb25 | AdamOuallaLeMenec   | Update plateau.py
+27/03/2026 18:17 | 0e9ae6a | AdamOuallaLeMenec   | Merge pull request #19 from AdamOuallaLeMenec/main
+27/03/2026 18:13 | f0bcbfd | AdamOuallaLeMenec   | Merge branch 'AICHA TAHARBELLAR:main' into main
+27/03/2026 18:13 | a1f8fd7 | AdamOuallaLeMenec   | Update plateau.py
+
+--- 25/03/2026 ---
+25/03/2026 17:09 | 2ef4102 | AdamOuallaLeMenec   | Merge pull request #18 from AdamOuallaLeMenec/main
+25/03/2026 17:05 | 2d41a6e | AdamOuallaLeMenec   | Merge branch 'AICHA TAHARBELLAR:main' into main
+25/03/2026 16:58 | 99a070d | zakou77             | jeux en local
+25/03/2026 16:12 | 1b6a6a7 | AdamOuallaLeMenec   | Update plateau.py
+25/03/2026 15:38 | 749f5d9 | zakou77             | ajout option mute son et affichage règle de voisinage
+25/03/2026 15:04 | 0d3006f | zakou77             | ajout de la règle de voisinage et moteur IA avec lvl
+
+--- 19/03/2026 ---
+19/03/2026 01:41 | 7a9c622 | AICHA TAHARBELLAR   | Merge pull request #17 from AICHA TAHARBELLAR/aicha
+19/03/2026 00:37 | fe8e093 | AICHA TAHARBELLAR       | ajout du mode reseau local
+
+--- 18/03/2026 ---
+18/03/2026 15:36 | f45c0ed | AICHA TAHARBELLAR   | Merge pull request #16 from AICHA TAHARBELLAR/aicha
+18/03/2026 15:12 | 086c151 | AICHA TAHARBELLAR   | Merge pull request #15 from AICHA TAHARBELLAR/aicha
+18/03/2026 15:10 | 9d0039a | AICHA TAHARBELLAR   | Merge pull request #14 from AICHA TAHARBELLAR/main
+
+--- 17/03/2026 ---
+17/03/2026 14:21 | a64ae41 | AICHA TAHARBELLAR       | répartition du code
+17/03/2026 14:07 | f30a3f9 | AICHA TAHARBELLAR       | Merge branch 'main' into aicha
+17/03/2026 13:50 | 8a49ceb | AICHA TAHARBELLAR       | test
+17/03/2026 11:58 | b29d433 | marwaidrissi        | Merge pull request #13 from AICHA TAHARBELLAR/marwa
+17/03/2026 11:58 | 1156cb7 | marwaidrissi        | Merge branch 'main' into marwa
+17/03/2026 00:55 | 23eee1e | marwaidrissi        | Add files via upload
+17/03/2026 00:54 | efaa17a | marwaidrissi        | Delete src/sources.txt
+17/03/2026 00:54 | e8e6f23 | marwaidrissi        | Update main.py
+17/03/2026 00:53 | 820f59b | marwaidrissi        | Delete src/__pycache__ directory
+17/03/2026 00:52 | ef30e58 | marwaidrissi        | Delete src/Sprites directory
+17/03/2026 00:52 | e85c372 | marwaidrissi        | Delete src/Sounds directory
+17/03/2026 00:52 | 47e91ed | marwaidrissi        | Delete src/Fonts directory
+17/03/2026 00:49 | 7c15804 | marwaidrissi        | Create main.py
+17/03/2026 00:49 | edd02b2 | marwaidrissi        | Delete src
+17/03/2026 00:46 | 7a13f8e | marwaidrissi        | Create src
+17/03/2026 00:46 | dcc7028 | marwaidrissi        | Delete src/main.py
+17/03/2026 00:46 | e4563a3 | marwaidrissi        | Delete src/jeu directory
+17/03/2026 00:46 | cf4e090 | marwaidrissi        | Delete src/affichage directory
+17/03/2026 00:46 | 03dfa11 | marwaidrissi        | Delete src/joueurs directory
+17/03/2026 00:45 | 1116c71 | marwaidrissi        | Delete src/navires directory
+17/03/2026 00:45 | 50319f0 | marwaidrissi        | Delete src/plateau directory
+17/03/2026 00:45 | 48c3c79 | marwaidrissi        | Delete src/__pycache__
+17/03/2026 00:44 | 976895f | marwaidrissi        | Add files via upload
+17/03/2026 00:39 | 3f271cc | marwaidrissi        | Create __pycache__
+
+--- 22/02/2026 ---
+22/02/2026 21:56 | 60fa64b | AICHA TAHARBELLAR   | Merge pull request #11 from AICHA TAHARBELLAR/aicha
+22/02/2026 20:52 | b84c20d | AICHA TAHARBELLAR       | modif fin_partie et gestion_tours
+22/02/2026 20:28 | f3c3ca8 | AICHA TAHARBELLAR   | fin de partie
+
+--- 09/02/2026 ---
+09/02/2026 13:32 | 84a5d65 | AICHA TAHARBELLAR   | Delete src/navires/deplacement
+09/02/2026 12:30 | 49eccd8 | AICHA TAHARBELLAR   | structure du code
+
+--- 04/02/2026 ---
+04/02/2026 22:45 | 2db424c | AICHA TAHARBELLAR   | Merge pull request #10 from AICHA TAHARBELLAR/AICHA TAHARBELLAR-patch-2
+04/02/2026 22:45 | 87281b5 | AICHA TAHARBELLAR   | mise a jour rapport
+04/02/2026 22:38 | a830936 | marwaidrissi        | Delete projet_bataille_navale.pdf
+04/02/2026 22:29 | 802d413 | AICHA TAHARBELLAR   | Delete Diagrammes/séquence_tirer_case_adverse.drawio (1) (1).pdf
+04/02/2026 22:28 | 2eb7634 | AdamOuallaLeMenec   | Rename séquence_cas_IA(2).drawio (2).pdf to séquence_cas_IA.drawio.pdf
+04/02/2026 22:28 | 32860a5 | AdamOuallaLeMenec   | Delete Diagrammes/séquence_IA.drawio.pdf
+04/02/2026 22:28 | 3b81341 | AdamOuallaLeMenec   | Delete Diagrammes/séquence_IA.drawio (2).pdf.pdf
+04/02/2026 22:27 | 20c1d51 | AdamOuallaLeMenec   | Add files via upload
+04/02/2026 22:27 | 54914d7 | AdamOuallaLeMenec   | Delete séquence_cas_IA(2).drawio (2).pdf
+04/02/2026 22:26 | 514c709 | AdamOuallaLeMenec   | Add files via upload
+04/02/2026 22:25 | d9d59b3 | AdamOuallaLeMenec   | Add files via upload
+04/02/2026 22:24 | d14f672 | AdamOuallaLeMenec   | Rename séquence_IA.drawio (2).pdf.pdf to séquence_IA.drawio.pdf
+04/02/2026 22:24 | 40fc3a3 | AdamOuallaLeMenec   | Delete Diagrammes/séquence_IA.drawio (2).pdf
+04/02/2026 22:23 | 2697829 | AdamOuallaLeMenec   | Add files via upload
+04/02/2026 21:48 | 08ab8eb | AICHA TAHARBELLAR   | mise a jour du journal
+04/02/2026 21:38 | ab5e8e6 | AdamOuallaLeMenec   | Add files via upload
+04/02/2026 21:22 | 03d0104 | AICHA TAHARBELLAR   | modification des diagrammes
+04/02/2026 21:18 | eba4d7f | marwaidrissi        | Add files via upload
+04/02/2026 21:17 | fd177bc | marwaidrissi        | Delete séquence_tirer_case_adverse.drawio (1) (1).pdf
+04/02/2026 21:17 | 1e24502 | marwaidrissi        | Add files via upload
+04/02/2026 21:13 | 8bb62c6 | marwaidrissi        | Delete Diagrammes/séquence_IA.drawio.pdf
+04/02/2026 21:12 | 5a1386a | marwaidrissi        | Delete Diagrammes/diagrammeClasse.pdf
+04/02/2026 19:53 | 5c9e526 | AICHA TAHARBELLAR   | Merge pull request #8 from AICHA TAHARBELLAR/AICHA TAHARBELLAR-sequence-tir
+04/02/2026 19:52 | 8c7db2d | AICHA TAHARBELLAR   | modif_sequence_tir
+04/02/2026 19:42 | 9e4caa1 | AICHA TAHARBELLAR   | Delete séquence_tirer_case_adverse.drawio.pdf
+04/02/2026 19:37 | 94dcf69 | AICHA TAHARBELLAR   | Ajouté(e) séquence_tirer_case_adverse.drawio.pdf
+04/02/2026 08:27 | 57dc2e2 | AICHA TAHARBELLAR   | Merge pull request #7 from zakou77/main
+
+--- 02/02/2026 ---
+02/02/2026 13:51 | 632139e | AICHA TAHARBELLAR   | Merge pull request #6 from AICHA TAHARBELLAR/AICHA TAHARBELLAR-patch-1
+02/02/2026 13:50 | e0e3ab6 | AICHA TAHARBELLAR   | Refactor README.md for clarity and consistency
+02/02/2026 13:41 | 98129fc | AICHA TAHARBELLAR   | Merge pull request #5 from AICHA TAHARBELLAR/AICHA TAHARBELLAR
+02/02/2026 13:41 | 4d1b047 | AICHA TAHARBELLAR   | Update README with UML diagrams and tools
+02/02/2026 12:43 | 8802025 | AICHA TAHARBELLAR   | readme
+
+--- 04/02/2026 (suite) ---
+04/02/2026 02:28 | 9f8e3cd | zakou77             | Ajout de la V2 du diagramme recevoir un tir navire
+04/02/2026 02:21 | 9579526 | zakou77             | Delete Diagrammes/séquence_recevoire_tir_navire.drawio.pdf
+
+--- 01/02/2026 ---
+01/02/2026 22:35 | 494ad60 | AICHA TAHARBELLAR   | ajout rapport
+01/02/2026 22:04 | 0150bef | AICHA TAHARBELLAR   | ajout journal git
+01/02/2026 22:00 | a386053 | AICHA TAHARBELLAR   | putting diagrammes into a folder
+01/02/2026 21:18 | 3059157 | AICHA TAHARBELLAR   | Replace 'Déplacement d'un bateau' with 'Parcours d'une IA'
+01/02/2026 20:38 | 7ed6e47 | marwaidrissi        | diagramme de classe
+01/02/2026 20:28 | 9e065e8 | marwaidrissi        | Remove state diagram details from README
+01/02/2026 20:21 | 06fdede | marwaidrissi        | Delete diagrammeDeClasse (2).pdf
+
+--- 01/02/2026 (Adam) ---
+01/02/2026 18:09 | 9892599 | AdamOuallaLeMenec   | Merge pull request #4 from AdamOuallaLeMenec/main
+01/02/2026 18:01 | 3919313 | AdamOuallaLeMenec   | Merge branch 'AICHA TAHARBELLAR:main' into main
+01/02/2026 17:59 | 8238b50 | AdamOuallaLeMenec   | Ajouté(e) séquence_IA.drawio.pdf
+01/02/2026 14:53 | a33ac81 | AdamOuallaLeMenec   | Rename séquence_cas_IA.drawio.pdf to séquence_IA.drawio.pdf
+01/02/2026 14:48 | 5a0c2d3 | AdamOuallaLeMenec   | Rename Diagramme sans nom.drawio.pdf to séquence_cas_IA.drawio.pdf
+01/02/2026 14:47 | e696875 | AdamOuallaLeMenec   | Ajouté(e) Diagramme sans nom.drawio.pdf
+01/02/2026 09:14 | cff579b | AICHA TAHARBELLAR   | Merge pull request #3 from AICHA TAHARBELLAR/AICHA TAHARBELLAR-activité_configPartie
+01/02/2026 09:13 | 244f006 | AICHA TAHARBELLAR   | adding diagramme d'activité
+01/02/2026 08:25 | 8c17b5b | AICHA TAHARBELLAR   | Merge pull request #2 from AICHA TAHARBELLAR/AICHA TAHARBELLAR-readme_modif
+01/02/2026 08:25 | 377f2b3 | AICHA TAHARBELLAR   | modification readme
+
+--- 30/01/2026 ---
+30/01/2026 22:55 | 416d8d2 | AICHA TAHARBELLAR   | Merge pull request #1 from AICHA TAHARBELLAR/AICHA TAHARBELLAR-patch-1
+30/01/2026 22:55 | 955824d | AICHA TAHARBELLAR   | Update README with project details and UML diagrams
+
+--- 26/01/2026 ---
+26/01/2026 23:22 | 437c7fa | zakou77             | Add files via upload
+26/01/2026 23:21 | 7ed264d | AICHA TAHARBELLAR   | Ajouté(e) activité_déroulementDePartie.drawio.pdf
+26/01/2026 14:17 | da0ba55 | AICHA TAHARBELLAR   | supprimer diagramme_cas_utilisation.drawio
+26/01/2026 14:17 | d9da7e2 | AICHA TAHARBELLAR   | supprimer séquence_tirer_case_adverse.drawio
+26/01/2026 14:02 | b8ab5bb | AdamOuallaLeMenec   | Ajouté(e) séquence_cas_Plateau_Cas.drawio.pdf
+26/01/2026 14:01 | ff9a5ae | AdamOuallaLeMenec   | Ajouté(e) séquence_cas_Plateau_Cas.drawio.pdf
+26/01/2026 14:00 | fb09593 | AdamOuallaLeMenec   | Ajouté(e) séquence_cas_Plateau_Cas.drawio.pdf
+26/01/2026 13:58 | dc5f7ef | AdamOuallaLeMenec   | Ajouté(e) séquence_cas_Plateau_Cas.drawio.pdf
+26/01/2026 13:58 | a64c2a1 | AICHA TAHARBELLAR   | Ajouté(e) séquence_tirer_case_adverse.drawio.pdf
+26/01/2026 13:57 | 12c56d3 | AICHA TAHARBELLAR   | Mettre à jour séquence_tirer_case_adverse.drawio
+26/01/2026 13:57 | 363f0b0 | AICHA TAHARBELLAR   | Mettre à jour séquence_tirer_case_adverse.drawio
+
+--- 22/01/2026 ---
+22/01/2026 13:56 | cecb699 | AICHA TAHARBELLAR   | Ajouté(e) séquence_tirer_case_adverse.drawio.pdf
+22/01/2026 13:55 | d35459c | AICHA TAHARBELLAR   | Mettre à jour séquence_tirer_case_adverse.drawio
+22/01/2026 13:19 | fef6a04 | AICHA TAHARBELLAR   | Ajouté(e) séquence_tirer_case_adverse.drawio
+22/01/2026 13:18 | aeb754d | AICHA TAHARBELLAR   | Ajouté(e) séquence_tirer_case_adverse.drawio.pdf
+22/01/2026 11:03 | a2fa306 | AICHA TAHARBELLAR   | Mettre à jour séquence_tirer_case_adverse.drawio
+22/01/2026 11:02 | 52594be | AICHA TAHARBELLAR   | Ajouté(e) séquence_tirer_case_adverse.drawio
+
+--- 19/01/2026 ---
+19/01/2026 15:25 | a7ea4b4 | AICHA TAHARBELLAR   | Ajouté(e) diagramme_cas_utilisation.drawio
+19/01/2026 15:22 | b89eba3 | AICHA TAHARBELLAR   | Ajouté(e) diagramme_cas_utilisation.drawio.pdf
+
+--- 18/01/2026 ---
+18/01/2026 00:38 | f7b5377 | AICHA TAHARBELLAR   | Initial commit
+
+
+======================================================================
+Total de commits : ~150 | Période : 18/01/2026 – 05/04/2026
+======================================================================
+
