@@ -2,7 +2,11 @@ from __future__ import annotations
 import pygame
 from enum import Enum
 from pathlib import Path
+from typing import TYPE_CHECKING
 from plateau.case import Case
+
+if TYPE_CHECKING:
+    from plateau.plateau import Plateau
 
 
 class Alignement(Enum):
@@ -18,14 +22,17 @@ class DirectionDeplacement(Enum):
 
 
 class Bateau(pygame.sprite.Sprite):
-    def __init__(self, nom: str, taille: int, image: Path, x=0, y=0):
+    def __init__(self, nom: str, taille: int, image: Path, x=0, y=0, cell_size: int = 16):
         super().__init__()
         self.nom = nom
         self.taille = taille
         self.pointsDeVie = taille
         self.casesOccupees: list[Case] = []
         self.alignement = Alignement.Horizontal
-        self.original_image = pygame.image.load(image).convert_alpha()
+        raw_image = pygame.image.load(image).convert_alpha()
+        target_w = max(cell_size * taille, 1)
+        target_h = max(cell_size - 2, 1)
+        self.original_image = pygame.transform.smoothscale(raw_image, (target_w, target_h))
         self.image = self.original_image.copy()
         self.rect = self.image.get_rect()
         self.rect.x = x
@@ -58,7 +65,7 @@ class Bateau(pygame.sprite.Sprite):
         self.image = pygame.transform.rotate(self.original_image, angle)
         self.rect = self.image.get_rect(center=center)
 
-    def calculerCasesApresDeplacement(self, dir: DirectionDeplacement, plateau: "Plateau") -> list[Case] | None:
+    def calculerCasesApresDeplacement(self, dir: DirectionDeplacement, plateau: Plateau) -> list[Case] | None:
         delta_row, delta_col = {
             DirectionDeplacement.NORD: (-1, 0),
             DirectionDeplacement.SUD: (1, 0),
